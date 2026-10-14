@@ -970,9 +970,6 @@ class HrPayslip(models.Model):
             tipo = int(line.salary_rule_id.tipo_concepto or ("4" if cat_code == "COMP" else "1"))
             code = "INSSJP" if line.code == "RET_INSSJP" else (line.code or "")
             line_name = line.name or ""
-            # Si se aplicó tope a la retención, visibilizar la base en el nombre
-            if line.code in ("RET_JUB", "RET_INSSJP", "RET_OS") and self.is_tope_applied and self.base_imponible_seg_social > 0:
-                line_name = f"{line.name} [Tope: ${self.base_imponible_seg_social:,.2f}]"
 
             if line.salary_rule_id.afip_unit == "%" or (line.rate and line.rate not in (0.0, 100.0)):
                 cant = float(line.rate)
@@ -995,6 +992,8 @@ class HrPayslip(models.Model):
                     },
                     "orden": orden,
                     "cantidad": cant,
+                    # Valor unitario / base imponible de la línea (valor hora, base topeada, monto fijo)
+                    "base": round(abs(line.amount), 2),
                     "importe": round(abs(line.total), 2),
                 }
             )
