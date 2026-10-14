@@ -1,0 +1,3 @@
+[submodule "payroll_arg_reportes"]
+	path = payroll_arg_reportes
+	url = https://github.com/ffunes-cru/payroll_arg_reportes.git
