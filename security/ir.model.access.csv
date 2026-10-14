@@ -9,8 +9,8 @@ access_afip_activity_user,afip.activity.user,model_afip_activity,payroll.group_p
 access_afip_zone_user,afip.zone.user,model_afip_zone,payroll.group_payroll_user,1,1,1,1
 access_afip_siniestrado_user,afip.siniestrado.user,model_afip_siniestrado,payroll.group_payroll_user,1,1,1,1
 access_payroll_arg_export_wizard_user,payroll.arg.export.wizard.user,model_payroll_arg_export_wizard,payroll.group_payroll_user,1,1,1,1
-access_hr_payslip_run_hours_wizard,hr.payslip.run.hours.wizard,model_hr_payslip_run_hours_wizard,payroll.group_payroll_user,1,1,1,1
-access_hr_payslip_run_hours_line,hr.payslip.run.hours.line,model_hr_payslip_run_hours_line,payroll.group_payroll_user,1,1,1,1
+access_hr_payslip_run_input_import,hr.payslip.run.input.import,model_hr_payslip_run_input_import,payroll.group_payroll_user,1,1,1,1
+access_hr_payslip_run_novelty_user,hr.payslip.run.novelty.user,model_hr_payslip_run_novelty,payroll.group_payroll_user,1,1,1,1
 access_payroll_arg_employee_wizard_user,payroll.arg.employee.wizard.user,model_payroll_arg_employee_wizard,payroll.group_payroll_user,1,1,1,1
 access_hr_ganancias_scale_user,hr.ganancias.scale.user,model_hr_ganancias_scale,payroll.group_payroll_user,1,1,1,1
 access_hr_ganancias_scale_line_user,hr.ganancias.scale.line.user,model_hr_ganancias_scale_line,payroll.group_payroll_user,1,1,1,1

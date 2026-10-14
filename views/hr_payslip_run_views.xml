@@ -16,20 +16,24 @@
                 <attribute name="string">Volver a Borrador</attribute>
             </xpath>
             <xpath expr="//header" position="inside">
-                <field name="has_hourly_payslips" invisible="1"/>
-                <field name="is_quincenal" invisible="1"/>
-                <button
-                    name="action_open_hours_wizard"
-                    type="object"
-                    string="Carga Masiva de Horas (Jornales)"
-                    class="oe_highlight btn-success"
-                    invisible="state != 'draft' or not has_hourly_payslips"
-                />
                 <button
                     name="action_compute_payslips"
                     type="object"
                     string="Recalcular Recibos"
                     class="oe_highlight btn-primary"
+                    invisible="state != 'draft'"
+                />
+                <button
+                    name="action_reload_period_inputs"
+                    type="object"
+                    string="Recargar Novedades del Período"
+                    invisible="state != 'draft'"
+                    confirm="Se vuelven a leer calendario, licencias, asistencias y ficha del empleado, pisando horas, vacaciones, feriados, SIRADIG y aporte adicional en todos los recibos (salvo los códigos fijados en Valores del Lote). ¿Continuar?"
+                />
+                <button
+                    name="action_open_input_import"
+                    type="object"
+                    string="Importar Novedades (CSV)"
                     invisible="state != 'draft'"
                 />
                 <button
@@ -42,84 +46,63 @@
             <xpath expr="//field[@name='struct_id']" position="replace"/>
             <xpath expr="//group[@name='period_group']" position="after">
                 <group string="Parámetros de Liquidación AFIP / ARCA">
-                    <field name="tipo_liquidacion"/>
-                    <field name="afip_nro_liquidacion"/>
-                    <field name="payment_date"/>
-                    <field name="struct_id" string="Estructura Salarial (Opcional)" options="{'no_create': True}" placeholder="Automática según tipo de liquidación y contrato"/>
+                    <field name="tipo_liquidacion" readonly="state != 'draft'"/>
+                    <field name="afip_nro_liquidacion" readonly="state != 'draft'"/>
+                    <field name="payment_date" readonly="state != 'draft'"/>
+                    <field name="struct_id" string="Estructura Salarial (Opcional)" options="{'no_create': True}"
+                           placeholder="Automática según tipo de liquidación y contrato" readonly="state != 'draft'"/>
                     <field name="coef_contrib_ss" readonly="state != 'draft'"/>
                     <field name="coef_contrib_os" readonly="state != 'draft'"/>
                 </group>
-                <group string="Novedades Variables de la Quincena" invisible="state != 'draft' or not is_quincenal">
-                    <field name="cant_feriados" string="Feriados (Hs)"
-                           help="Cantidad de horas de feriado de la quincena a liquidar para todos los operarios del lote."/>
-                    <field name="monto_premio_produccion"
-                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Premio' en la tabla de abajo."/>
-                    <field name="monto_presentismo"
-                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Present.' en la tabla de abajo."/>
-                    <field name="monto_portitulo"
-                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Portít.' en la tabla de abajo."/>
-                    <field name="monto_gratif_no_rem"
-                           help="Monto de la Gratificación Extraordinaria No Remunerativa para esta quincena."/>
-                    <field name="monto_compens_no_rem"
-                           help="Monto de la Compensación Extraordinaria No Remunerativa para esta quincena."/>
-                    <field name="precio_vianda" string="Precio Vianda ($)"
-                           help="Precio unitario de vianda a descontar en esta quincena para los operarios del lote."/>
-                </group>
             </xpath>
+            <xpath expr="//field[@name='slip_ids']/preceding-sibling::separator[1]" position="replace"/>
             <xpath expr="//field[@name='slip_ids']" position="replace">
-                <field name="slip_ids" readonly="state == 'close'" context="{'default_payslip_run_id': id, 'default_date_from': date_start, 'default_date_to': date_end}">
-                    <list decoration-muted="state == 'cancel'" editable="bottom" create="0">
-                        <field name="number" decoration-bf="1" optional="show" readonly="1"/>
-                        <field name="employee_id" readonly="1"/>
-                        <field name="name" optional="show" readonly="1"/>
-                        <field name="date_from" readonly="1" optional="hide"/>
-                        <field name="date_to" readonly="1" optional="hide"/>
-                        <field name="hours_normal" optional="show" string="Hs Norm" readonly="1"/>
-                        <field name="cant_feriados" optional="show" string="Feriados (Hs)"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')"/>
-                        <field name="cant_viandas" optional="show" string="Viandas"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')"/>
-                        <field name="hours_ext50" optional="show" string="Hs Ext50" readonly="1"/>
-                        <field name="hours_ext100" optional="show" string="Hs Ext100" readonly="1"/>
-                        <field name="antiguedad_anios" optional="show" string="Antig." readonly="1"/>
-                        <field name="antiguedad_override" string="Override Antig." widget="boolean_toggle"
-                               readonly="state in ('done', 'cancel')" optional="hide"/>
-                        <field name="antiguedad_anios_manual" string="Antig. Manual"
-                               readonly="state in ('done', 'cancel') or not antiguedad_override" optional="hide"/>
-                        <field name="premio_prod_ok" string="Premio" widget="boolean_toggle"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="presentismo_ok" string="Present." widget="boolean_toggle"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="portitulo_ok" string="Portít." widget="boolean_toggle"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="monto_objetivos" string="Objetivos $"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="gratif_no_rem_ok" string="Gratif. NR" widget="boolean_toggle"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="monto_gratif_no_rem" string="Gratif. $"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="compens_no_rem_ok" string="Compens. NR" widget="boolean_toggle"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="monto_compens_no_rem" string="Compens. $"
-                               column_invisible="not parent.is_quincenal"
-                               readonly="state in ('done', 'cancel')" optional="show"/>
-                        <field name="total_remunerativo" optional="show" widget="monetary" readonly="1"/>
-                        <field name="neto_liquidacion" optional="show" widget="monetary" decoration-bf="1" decoration-success="1" readonly="1"/>
-                        <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'verify'" decoration-info="state == 'draft'" decoration-danger="state == 'cancel'" readonly="1"/>
-                        <button name="action_open_payslip" type="object" icon="fa-external-link" title="Abrir Recibo Completo"/>
-                    </list>
-                </field>
+                <notebook>
+                    <page name="novedades" string="Novedades">
+                        <separator string="Valores del Lote"/>
+                        <field name="novelty_ids" readonly="state != 'draft'" nolabel="1">
+                            <list editable="bottom">
+                                <field name="input_id" options="{'no_create': True}"/>
+                                <field name="code" optional="hide"/>
+                                <field name="amount"/>
+                                <button name="action_apply" type="object" string="Aplicar a todos"
+                                        icon="fa-arrow-down" class="btn-link"
+                                        confirm="Se pisa este código en todos los recibos editables del lote. ¿Continuar?"/>
+                            </list>
+                        </field>
+                        <separator string="Novedades por Empleado"/>
+                        <field name="input_line_ids" widget="x2many_2d_matrix"
+                               field_x_axis="code" field_y_axis="employee_id" field_value="amount"
+                               show_row_totals="0"
+                               readonly="state != 'draft'" nolabel="1">
+                            <list>
+                                <field name="code"/>
+                                <field name="employee_id"/>
+                                <field name="amount" readonly="payslip_state not in ('draft', 'verify')"/>
+                                <field name="payslip_state" column_invisible="1"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page name="recibos" string="Recibos">
+                        <field name="slip_ids" readonly="state == 'close'"
+                               context="{'default_payslip_run_id': id, 'default_date_from': date_start, 'default_date_to': date_end}">
+                            <list decoration-muted="state == 'cancel'" create="0">
+                                <field name="number" decoration-bf="1" optional="show"/>
+                                <field name="employee_id"/>
+                                <field name="name" optional="hide"/>
+                                <field name="struct_id" optional="hide"/>
+                                <field name="antiguedad_anios" optional="show" string="Antig."/>
+                                <field name="total_remunerativo" optional="show" widget="monetary"/>
+                                <field name="total_no_remunerativo" optional="hide" widget="monetary"/>
+                                <field name="total_retenciones" optional="hide" widget="monetary"/>
+                                <field name="neto_liquidacion" optional="show" widget="monetary" decoration-bf="1" decoration-success="1"/>
+                                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'verify'" decoration-info="state == 'draft'" decoration-danger="state == 'cancel'"/>
+                                <button name="action_open_payslip" type="object" icon="fa-external-link" title="Abrir Recibo Completo"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
             </xpath>
         </field>
-
     </record>
 </odoo>

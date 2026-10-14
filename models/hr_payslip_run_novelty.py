@@ -1,0 +1,39 @@
+from odoo import api, fields, models
+
+
+class HrPayslipRunNovelty(models.Model):
+    """Valor de una novedad fijado para todo el lote (ej. monto de Presentismo, precio
+    de la vianda, horas de feriado). Se carga en los recibos al generarlos y con
+    "Aplicar"; mientras exista, "Recargar novedades del período" no pisa ese código.
+    """
+
+    _name = "hr.payslip.run.novelty"
+    _description = "Novedad fijada en el lote de liquidación"
+    _order = "run_id, id"
+
+    run_id = fields.Many2one("hr.payslip.run", required=True, ondelete="cascade", index=True)
+    input_id = fields.Many2one(
+        "hr.rule.input",
+        string="Novedad",
+        required=True,
+        ondelete="restrict",
+    )
+    code = fields.Char(related="input_id.code", store=True)
+    amount = fields.Float(string="Valor", digits=(16, 2))
+
+    _run_code_uniq = models.Constraint(
+        "UNIQUE(run_id, code)",
+        "Cada novedad puede fijarse una sola vez por lote.",
+    )
+
+    @api.depends("input_id", "amount")
+    def _compute_display_name(self):
+        for novelty in self:
+            novelty.display_name = f"{novelty.input_id.name}: {novelty.amount:,.2f}"
+
+    def action_apply(self):
+        """Pisa el código en todos los recibos editables del lote."""
+        for novelty in self:
+            slips = novelty.run_id.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
+            slips._set_input_amounts({novelty.code: novelty.amount})
+        return True
