@@ -6,6 +6,10 @@ from odoo.exceptions import UserError
 from .hr_contract import DIAS_BASE_MENSUAL_LCT
 
 EDITABLE_SLIP_STATES = ("draft", "verify")
+# Novedades en horas / días / unidades; el resto son importes en pesos
+QUANTITY_INPUT_CODES = (
+    "HS_NORM", "HS_EXT50", "HS_EXT100", "FERIADO", "VAC_DIAS", "CANT_VIANDAS", "SAC_DIAS", "VAC_NO_GOZ",
+)
 
 
 class HrPayslipRun(models.Model):
@@ -52,10 +56,17 @@ class HrPayslipRun(models.Model):
         help="Novedades con el mismo valor para todo el lote. Se cargan al generar los recibos "
              "o con el botón Aplicar de cada línea.",
     )
-    input_line_ids = fields.One2many(
+    input_qty_line_ids = fields.One2many(
         "hr.payslip.input",
         "payslip_run_id",
-        string="Novedades por Empleado",
+        string="Horas, Días y Cantidades",
+        domain=[("code", "in", QUANTITY_INPUT_CODES)],
+    )
+    input_amount_line_ids = fields.One2many(
+        "hr.payslip.input",
+        "payslip_run_id",
+        string="Importes ($)",
+        domain=[("code", "not in", QUANTITY_INPUT_CODES)],
     )
     coef_contrib_ss = fields.Float(
         string="Coef. Contrib. Seg. Social",

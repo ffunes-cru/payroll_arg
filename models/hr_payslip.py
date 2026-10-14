@@ -317,7 +317,15 @@ class HrPayslip(models.Model):
                 struct = self._get_struct_for(contract, run, struct)
                 if struct:
                     vals["struct_id"] = struct.id
-        return super().create(vals_list)
+        slips = super().create(vals_list)
+        slips._ensure_input_lines()
+        return slips
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "struct_id" in vals:
+            self._ensure_input_lines()
+        return res
 
     # ══════════════════════════════════════════════
     # NOVEDADES: CARGA AUTOMÁTICA EN LAS LÍNEAS DE ENTRADA
@@ -336,12 +344,18 @@ class HrPayslip(models.Model):
         run = self._get_context_run()
         struct = (self.struct_id if len(self) == 1 else False) or run.struct_id
         struct = self._get_struct_for(contract, run, struct)
+        return self._prepare_input_lines(contract, struct, date_from, date_to, run)
+
+    @api.model
+    def _prepare_input_lines(self, contract, struct, date_from, date_to, run, skip_codes=()):
+        """Valores de las líneas de entrada de la estructura (una por código), con el valor
+        automático cargado. ``skip_codes``: códigos que ya existen en el recibo."""
         rule_inputs = struct.get_structure_with_parents().get_all_rules().input_ids
         amounts = self._get_period_input_amounts(contract, date_from, date_to, run)
         amounts.update(run._get_novelty_amounts())
 
         res = []
-        seen = set()
+        seen = set(skip_codes)
         for sequence, rule_input in enumerate(rule_inputs, start=1):
             if rule_input.code in seen:
                 continue
@@ -354,6 +368,22 @@ class HrPayslip(models.Model):
                 "amount": amounts.get(rule_input.code, 0.0),
             })
         return res
+
+    def _ensure_input_lines(self):
+        """Agrega, con su valor automático, las entradas de la estructura que le falten al
+        recibo (recibos creados por importación, datos XML o código). No toca las existentes."""
+        vals_list = []
+        for slip in self.filtered(lambda s: s.contract_id and s.struct_id and s.state in ("draft", "verify")):
+            struct_codes = set(slip.struct_id.get_structure_with_parents().get_all_rules().input_ids.mapped("code"))
+            if struct_codes <= set(slip.input_line_ids.mapped("code")):
+                continue
+            for vals in slip._prepare_input_lines(
+                slip.contract_id, slip.struct_id, slip.date_from, slip.date_to, slip.payslip_run_id,
+                skip_codes=slip.input_line_ids.mapped("code"),
+            ):
+                vals_list.append({**vals, "payslip_id": slip.id})
+        if vals_list:
+            self.env["hr.payslip.input"].create(vals_list)
 
     @api.model
     def _get_period_input_amounts(self, contract, date_from, date_to, run):
@@ -408,6 +438,7 @@ class HrPayslip(models.Model):
     def action_reload_period_inputs(self):
         """Vuelve a leer calendario, licencias, asistencias y ficha del empleado y pisa
         las entradas automáticas. Los códigos con valor fijado en el lote no se tocan."""
+        self._ensure_input_lines()
         for slip in self.filtered(lambda s: s.state in ("draft", "verify") and s.contract_id):
             run = slip.payslip_run_id
             amounts = slip._get_period_input_amounts(slip.contract_id, slip.date_from, slip.date_to, run)

@@ -70,8 +70,20 @@
                                         confirm="Se pisa este código en todos los recibos editables del lote. ¿Continuar?"/>
                             </list>
                         </field>
-                        <separator string="Novedades por Empleado"/>
-                        <field name="input_line_ids" widget="x2many_2d_matrix"
+                        <separator string="Horas, Días y Cantidades por Empleado"/>
+                        <field name="input_qty_line_ids" widget="x2many_2d_matrix"
+                               field_x_axis="code" field_y_axis="employee_id" field_value="amount"
+                               show_row_totals="0"
+                               readonly="state != 'draft'" nolabel="1">
+                            <list>
+                                <field name="code"/>
+                                <field name="employee_id"/>
+                                <field name="amount" readonly="payslip_state not in ('draft', 'verify')"/>
+                                <field name="payslip_state" column_invisible="1"/>
+                            </list>
+                        </field>
+                        <separator string="Importes por Empleado ($)"/>
+                        <field name="input_amount_line_ids" widget="x2many_2d_matrix"
                                field_x_axis="code" field_y_axis="employee_id" field_value="amount"
                                show_row_totals="0"
                                readonly="state != 'draft'" nolabel="1">

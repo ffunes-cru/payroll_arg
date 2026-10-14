@@ -108,7 +108,12 @@ class TestNovedades(TransactionCase):
         self.assertEqual(self._inp(slip, "PREMIO_PROD"), 0.0)
         codes = slip.input_line_ids.mapped("code")
         self.assertEqual(len(codes), len(set(codes)), "Una sola línea por código")
-        self.assertEqual(run.input_line_ids, (run.slip_ids.input_line_ids), "La matriz del lote ve todas las entradas")
+        self.assertEqual(
+            run.input_qty_line_ids | run.input_amount_line_ids, run.slip_ids.input_line_ids,
+            "Entre las dos matrices del lote se ven todas las entradas",
+        )
+        self.assertIn("HS_NORM", run.input_qty_line_ids.mapped("code"))
+        self.assertNotIn("PRESENTISMO", run.input_qty_line_ids.mapped("code"))
 
     def test_q2_jornal_matches_previous_engine(self):
         run = self._create_run(
@@ -272,3 +277,21 @@ class TestNovedades(TransactionCase):
         slip.compute_sheet()
         # 4.500 $/h × 44 hs/sem × 4,333 sem/mes × 50%
         self.assertAlmostEqual(self._totals(slip)["SAC_JORNAL"], 4500 * 44 * 4.333 * 0.5, places=2)
+
+    def test_slip_created_without_inputs_gets_all_structure_inputs(self):
+        """Recibos creados por importación / XML / código: se completan las entradas faltantes
+        con su valor automático, sin tocar las que vinieron cargadas."""
+        run = self.env["hr.payslip.run"].create({
+            "name": "Q1", "tipo_liquidacion": "1° Quincena", "date_start": "2026-09-01", "date_end": "2026-09-15",
+        })
+        slip = self.env["hr.payslip"].create({
+            "employee_id": self.jornal.id,
+            "date_from": "2026-09-01",
+            "date_to": "2026-09-15",
+            "payslip_run_id": run.id,
+            "input_line_ids": [(0, 0, {"name": "Extras", "code": "HS_EXT50", "amount": 10.0})],
+        })
+        struct_codes = set(slip.struct_id.get_all_rules().input_ids.mapped("code"))
+        self.assertEqual(set(slip.input_line_ids.mapped("code")), struct_codes)
+        self.assertEqual(self._inp(slip, "HS_EXT50"), 10.0)
+        self.assertEqual(self._inp(slip, "HS_NORM"), 88.0)
