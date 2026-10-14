@@ -19,6 +19,12 @@ _logger = logging.getLogger(__name__)
 DEFAULT_TZ = "America/Argentina/Cordoba"
 QUINCENA_TYPES = ("1° Quincena", "2° Quincena", "Quincenal")
 SPECIALIZED_RUN_TYPES = ("Vacaciones", "SAC", "Liquidación Final")
+# Parte de Obra Social que va al Fondo Solidario de Redistribución (ANSSAL) en el F.931
+ANSSAL_SHARE = 0.15
+# Agrupación de conceptos en los importes del F.931
+F931_VACACIONES_CODES = ("VACACIONES", "VACACIONES_MENSUAL", "VAC_NO_GOZ_MENS", "VAC_NO_GOZ_JORNAL")
+F931_HS_EXTRAS_CODES = ("HS_EXT_50", "HS_EXT_100")
+F931_SAC_CODES = ("SAC_MENSUAL", "SAC_JORNAL", "SAC_PROP_MENS", "SAC_PROP_JORNAL")
 
 
 class HrPayslip(models.Model):
@@ -221,7 +227,7 @@ class HrPayslip(models.Model):
                 continue
             start_date = slip._get_antiguedad_start_date() if (slip.contract_id or slip.employee_id) else False
             if start_date and slip.date_to:
-                slip.antiguedad_anios = max(0, slip.date_to.year - start_date.year)
+                slip.antiguedad_anios = max(0, relativedelta(slip.date_to, start_date).years)
             else:
                 slip.antiguedad_anios = 0
 
@@ -232,22 +238,24 @@ class HrPayslip(models.Model):
             no_rem = 0.0
             ret = 0.0
             comp = 0.0
+            # Se suman los importes sin redondear (como el recibo oficial) y se redondea el total
             for line in slip.line_ids:
                 cat_code = (line.category_id.code or "").upper()
                 if cat_code in ["GROSS", "NET"]:
                     continue
+                raw = line.amount * line.quantity * line.rate / 100.0
                 if cat_code == "COMP":
-                    comp += abs(line.total)
+                    comp += abs(raw)
                     continue
                 tipo = str(line.salary_rule_id.tipo_concepto or "")
                 if tipo == "1":
-                    rem += line.total
+                    rem += raw
                 elif tipo == "2":
-                    no_rem += line.total
+                    no_rem += raw
                 elif tipo == "3":
-                    ret += abs(line.total)
+                    ret += abs(raw)
                 elif tipo == "4":
-                    comp += abs(line.total)
+                    comp += abs(raw)
             slip.total_remunerativo = round(rem, 2)
             slip.total_no_remunerativo = round(no_rem, 2)
             slip.total_retenciones = round(ret, 2)
@@ -431,7 +439,7 @@ class HrPayslip(models.Model):
         if daily_hours:
             weekly_hours = round(sum(daily_hours.values()), 2)
         else:
-            weekly_hours = calendar.full_time_required_hours or (calendar.hours_per_day * 5) or 44.0
+            weekly_hours = calendar.hours_per_week or 44.0
 
         if weekly_hours <= 0:
             return 0.0
@@ -505,23 +513,28 @@ class HrPayslip(models.Model):
         return float(len(holiday_days))
 
     def _get_prev_month_gross(self):
-        """Base patronal de jornalizados: bruto remunerativo del mes anterior."""
+        """Base de contribuciones de jornalizados quincenales: bruto remunerativo del último
+        mes con recibos calculados anterior al período (todas las liquidaciones de ese mes:
+        quincenas, SAC, vacaciones, ajustes). Se puede fijar a mano con prev_month_gross_manual.
+        """
         self.ensure_one()
         if self.prev_month_gross_manual > 0:
             return round(self.prev_month_gross_manual, 2)
         if not self.employee_id or not self.date_from:
             return 0.0
-        prev_date = self.date_from - relativedelta(months=1)
-        first_day_prev = prev_date.replace(day=1)
-        last_day_prev = prev_date.replace(day=calendar.monthrange(prev_date.year, prev_date.month)[1])
-        past_slips = self.search([
+        domain = [
             ("employee_id", "=", self.employee_id.id),
             ("id", "!=", self._origin.id or 0),
-            ("date_from", ">=", first_day_prev),
-            ("date_to", "<=", last_day_prev),
             ("state", "in", ("done", "verify")),
-        ])
-        return round(sum(past_slips.mapped("total_remunerativo")), 2)
+        ]
+        month_start = self.date_from.replace(day=1)
+        last = self.search(domain + [("date_to", "<", month_start)], order="date_to desc", limit=1)
+        if not last:
+            return 0.0
+        first_day = last.date_to.replace(day=1)
+        last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
+        slips = self.search(domain + [("date_from", ">=", first_day), ("date_to", "<=", last_day)])
+        return round(sum(slips.mapped("total_remunerativo")), 2)
 
     def _get_tope_imponible(self):
         self.ensure_one()
@@ -559,7 +572,9 @@ class HrPayslip(models.Model):
             "coef_os": coef_os,
             "detraccion_sipa": self.company_id.detraccion_sipa,
             "tope": self._get_tope_imponible(),
-            "prev_gross": self._get_prev_month_gross(),
+            # Sólo las quincenas toman la base del último mes; SAC / vacaciones / final
+            # contribuyen sobre su propio remunerativo.
+            "prev_gross": self._get_prev_month_gross() if self.tipo_liquidacion in QUINCENA_TYPES else 0.0,
             "is_q1": self.tipo_liquidacion == "1° Quincena",
             "is_q2": self.tipo_liquidacion == "2° Quincena",
         })
@@ -749,13 +764,12 @@ class HrPayslip(models.Model):
         hs_extras_cant = 0
 
         for line in self.line_ids:
-            rule_code = (line.code or "").upper()
-            if "VAC" in rule_code:
+            if line.code in F931_VACACIONES_CODES:
                 vacaciones_val += line.total
-            elif "EXT" in rule_code or "HS_EXT" in rule_code:
+            elif line.code in F931_HS_EXTRAS_CODES:
                 hs_extras_val += line.total
                 hs_extras_cant += int(line.quantity or 0)
-            elif "SAC" in rule_code or "AGUIN" in rule_code:
+            elif line.code in F931_SAC_CODES:
                 sac_val += line.total
             elif line.salary_rule_id.tipo_concepto == "1":
                 sueldo_val += line.total
@@ -960,81 +974,52 @@ class HrPayslip(models.Model):
         ret = self.total_retenciones
         neto = self.neto_liquidacion
 
-        # ── Aportes del Trabajador (estrictamente desde líneas calculadas) ──
-        line_jub = self.line_ids.filtered(lambda l: l.code == "RET_JUB")
-        line_inssjp = self.line_ids.filtered(lambda l: l.code in ["RET_INSSJP", "INSSJP"])
-        line_os = self.line_ids.filtered(lambda l: l.code == "RET_OS")
-        line_sind = self.line_ids.filtered(lambda l: l.code == "RET_SIND")
+        lines_by_code = {line.code: line for line in self.line_ids}
 
-        # ── Contribuciones Patronales (estrictamente desde líneas calculadas) ──
-        line_ct_art = self.line_ids.filtered(lambda l: l.code in ["COMP_ART", "CTRART"])
-        line_ct_jub = self.line_ids.filtered(lambda l: l.code in ["COMP_JUB", "CTJUBI"])
-        line_ct_os = self.line_ids.filtered(lambda l: l.code in ["COMP_OS", "CTOBSO"])
-        line_ct_aaff = self.line_ids.filtered(lambda l: l.code in ["COMP_AAFF", "CTASFA"])
-        line_ct_fne = self.line_ids.filtered(lambda l: l.code in ["COMP_FNE", "CTRFNE"])
-        line_ct_inssjp = self.line_ids.filtered(lambda l: l.code in ["COMP_INSSJP", "CTINSS"])
-        line_ct_scvo = self.line_ids.filtered(lambda l: l.code in ["COMP_SCVO", "SEGOBL"])
-        line_ct_uom = self.line_ids.filtered(lambda l: l.code in ["COMP_UOM_VIDA", "SEGUOM"])
-
-        ct_jub_val = abs(line_ct_jub[0].total) if line_ct_jub else 0.0
-        ct_inssjp_val = abs(line_ct_inssjp[0].total) if line_ct_inssjp else 0.0
-        ct_aaff_val = abs(line_ct_aaff[0].total) if line_ct_aaff else 0.0
-        ct_fne_val = abs(line_ct_fne[0].total) if line_ct_fne else 0.0
-        ct_os_val = abs(line_ct_os[0].total) if line_ct_os else 0.0
-        ct_art_val = abs(line_ct_art[0].total) if line_ct_art else 0.0
-        ct_scvo_val = abs(line_ct_scvo[0].total) if line_ct_scvo else 0.0
-        ct_uom_val = abs(line_ct_uom[0].total) if line_ct_uom else 0.0
+        def line_total(code):
+            line = lines_by_code.get(code)
+            return abs(line.total) if line else 0.0
 
         # ── Detalle de la Composición Salarial (Pie de página según normativa AFIP F.931) ──
-        # Se calcula sobre el Bruto del mes actual de este empleado (rem), aplicando el
-        # desdoblamiento del 15% a ANSSAL (FSR) que AFIP agrupa en Seguridad Social en el F.931.
+        # Aportes: desde las líneas calculadas. Contribuciones: sobre el bruto del mes actual
+        # (las líneas COMP_* usan la base del último mes declarado). El 15% de Obra Social
+        # (ANSSAL / FSR) se agrupa dentro de Seguridad Social como en el F.931.
+        coef_ss, _coef_os = self._get_contrib_coefs()
 
-        # 1. Costo Sindical:
-        pie_ap_sin = abs(line_sind[0].total) if line_sind else round(rem * 0.025, 2)
+        pie_ap_sin = line_total("RET_SIND")
         pie_ct_sin = 0.0
 
-        # 2. INSSJP (PAMI):
-        pie_ap_inssjp = abs(line_inssjp[0].total) if line_inssjp else round(rem * (company.inssjp_contrib_rate or 3.0) / 100.0, 2)
-        coef_ss = self._get_contrib_coefs()[0] or 1.0
-        pie_ct_inssjp = round(rem * ((company.inssjp_patronal_rate or 1.59) / 100.0) * coef_ss, 2)
+        pie_ap_inssjp = line_total("RET_INSSJP")
+        pie_ct_inssjp = round(rem * company.inssjp_patronal_rate / 100.0 * coef_ss, 2)
 
-        # 3. ART:
-        art_pct = (company.art_variable_rate or 5.82) / 100.0
-        pie_art = round(rem * art_pct, 2)
+        pie_art = round(rem * company.art_variable_rate / 100.0, 2)
+        pie_svida = line_total("COMP_SCVO")
 
-        # 4. SCVO:
-        pie_svida = abs(line_ct_scvo[0].total) if line_ct_scvo else 424.62
-
-        # 5. Obra Social (desglose 85% OS y 15% ANSSAL según F.931):
         base_os = round(rem + no_rem, 2)
-        tot_ap_os = abs(line_os[0].total) if line_os else round(base_os * (company.os_worker_rate or 3.0) / 100.0, 2)
-        pie_ap_os = round(tot_ap_os * 0.85, 2)
-        anssal_ap = round(tot_ap_os * 0.15, 2)
-
-        os_pat_rate = (company.os_patronal_rate or 6.0) / 100.0
-        pie_ct_os = round(base_os * (os_pat_rate * 0.85), 2)
-        anssal_ct = round(base_os * (os_pat_rate * 0.15), 2)
+        tot_ap_os = line_total("RET_OS")
+        pie_ap_os = round(tot_ap_os * (1 - ANSSAL_SHARE), 2)
+        anssal_ap = round(tot_ap_os * ANSSAL_SHARE, 2)
+        os_pat_rate = company.os_patronal_rate / 100.0
+        pie_ct_os = round(base_os * os_pat_rate * (1 - ANSSAL_SHARE), 2)
+        anssal_ct = round(base_os * os_pat_rate * ANSSAL_SHARE, 2)
         anssal_total = round(anssal_ct + anssal_ap, 2)
 
-        # 6. Seguridad Social (ANSSAL agrupado dentro de Seguridad Social según F.931):
-        pie_ap_jub = abs(line_jub[0].total) if line_jub else round(rem * 0.11, 2)
         is_q2 = self.tipo_liquidacion == "2° Quincena"
-        pie_ap_ss = round(rem * 0.11 + anssal_ap, 2) if is_q2 else round(pie_ap_jub + anssal_ap, 2)
-
-        sipa_rate = (company.jubilacion_patronal_rate or 10.77) / 100.0
-        aaff_rate = (company.aaff_patronal_rate or 4.70) / 100.0
-        fne_rate = (company.fne_patronal_rate or 0.94) / 100.0
-        ct_jub_ind = round(rem * sipa_rate * coef_ss, 2)
-        ct_aaff_ind = round(rem * aaff_rate * coef_ss, 2)
-        ct_fne_ind = round(rem * fne_rate * coef_ss, 2)
-        pie_ct_ss_base = round(ct_jub_ind + ct_aaff_ind + ct_fne_ind, 2)
-        if is_q2:
-            pie_ct_ss = round(pie_ct_ss_base + anssal_total, 2)
+        jub = lines_by_code.get("RET_JUB")
+        if is_q2 and jub:
+            # Q2: aporte sin redondear para calzar con el borrador del F.931
+            pie_ap_ss = round(abs(jub.amount) * jub.rate / 100.0 + anssal_ap, 2)
         else:
-            pie_ct_ss = round(pie_ct_ss_base + anssal_ap, 2)
+            pie_ap_ss = round(line_total("RET_JUB") + anssal_ap, 2)
 
-        total_contrib = round(self.total_contribuciones or (ct_art_val + ct_jub_val + ct_os_val + ct_aaff_val + ct_fne_val + ct_inssjp_val + ct_scvo_val + ct_uom_val), 2)
-        costo_total = round(self.costo_total_empleador or (rem + no_rem + total_contrib), 2)
+        ct_jub_ind = round(rem * company.jubilacion_patronal_rate / 100.0 * coef_ss, 2)
+        ct_aaff_ind = round(rem * company.aaff_patronal_rate / 100.0 * coef_ss, 2)
+        ct_fne_ind = round(rem * company.fne_patronal_rate / 100.0 * coef_ss, 2)
+        pie_ct_ss_base = round(ct_jub_ind + ct_aaff_ind + ct_fne_ind, 2)
+        pie_ct_ss = round(pie_ct_ss_base + (anssal_total if is_q2 else anssal_ap), 2)
+
+        total_contrib = self.total_contribuciones
+        costo_total = self.costo_total_empleador
 
         periodo_str = self.date_from.strftime("%Y-%m") if self.date_from else datetime.today().strftime("%Y-%m")
         fecha_pago_str = str(self.payment_date or self.date_to or datetime.today().date())
@@ -1199,40 +1184,37 @@ class HrPayslipWorkedDays(models.Model):
         help="Código de identificación del concepto de días u horas trabajadas/ausencias.",
     )
 
+    @staticmethod
+    def _guess_code(name):
+        n = (name or "").lower()
+        if any(k in n for k in ("vacac", "vacat")):
+            return "VAC"
+        if any(k in n for k in ("enferm", "sick")):
+            return "ENF"
+        if "work" in n or "normal" in n:
+            return "WORK100"
+        return "LEAVE"
+
     @api.onchange("name")
     def _onchange_name(self):
         if not self.code and self.name:
-            n = self.name.lower()
-            if any(k in n for k in ["vacac", "vacat"]):
-                self.code = "VAC"
-            elif any(k in n for k in ["enferm", "sick"]):
-                self.code = "ENF"
-            else:
-                self.code = "LEAVE"
+            self.code = self._guess_code(self.name)
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if not vals.get("code"):
-                n = (vals.get("name") or "").lower()
-                if any(k in n for k in ["vacac", "vacat"]):
-                    vals["code"] = "VAC"
-                elif any(k in n for k in ["enferm", "sick"]):
-                    vals["code"] = "ENF"
-                elif "work" in n or "normal" in n:
-                    vals["code"] = "WORK100"
-                else:
-                    vals["code"] = "LEAVE"
+                vals["code"] = self._guess_code(vals.get("name"))
         return super().create(vals_list)
 
     def write(self, vals):
         if "code" in vals and not vals["code"]:
-            for rec in self:
-                n = (vals.get("name") or rec.name or "").lower()
-                if any(k in n for k in ["vacac", "vatat"]):
-                    vals["code"] = "VAC"
-                elif any(k in n for k in ["enferm", "sick"]):
-                    vals["code"] = "ENF"
-                else:
-                    vals["code"] = "LEAVE"
+            vals["code"] = self._guess_code(vals.get("name") or self[:1].name)
         return super().write(vals)
+
+
+class HrPayslipLine(models.Model):
+    _inherit = "hr.payslip.line"
+
+    # 4 decimales en el importe unitario: 30 × (sueldo / 30) debe dar el sueldo exacto
+    amount = fields.Float(digits=(16, 4))

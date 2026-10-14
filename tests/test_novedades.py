@@ -5,8 +5,9 @@ from odoo.tests import Form, TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestNovedades(TransactionCase):
-    """Las novedades viven sólo en hr.payslip.input; los importes esperados son los
-    del motor anterior para los mismos datos (cálculo de referencia del 14/10/2026)."""
+    """Las novedades viven sólo en hr.payslip.input. Los importes esperados son los del
+    motor anterior para los mismos datos (14/10/2026), salvo dos correcciones posteriores:
+    el aporte del trabajador al Seguro de Vida UOM y el redondeo del básico mensual."""
 
     @classmethod
     def setUpClass(cls):
@@ -131,7 +132,8 @@ class TestNovedades(TransactionCase):
         self.assertEqual(t["RET_OS"], -16329.36)
         self.assertEqual(t["RET_SIND"], -13607.8)
         self.assertEqual(t["DESC_VIANDAS"], -25000.0)
-        self.assertEqual(t["NET"], 415971.16)
+        self.assertEqual(t["RET_UOM_VIDA"], -8045.65)
+        self.assertEqual(t["NET"], 407925.51)
         self.assertEqual(t["COMP_JUB"], 5571.41)
         self.assertEqual(t["COMP_OS"], 4718.81)
         self.assertEqual(t["COMP_UOM_VIDA"], 8045.65)
@@ -139,7 +141,7 @@ class TestNovedades(TransactionCase):
         t = self._totals(rossi)
         self.assertNotIn("PREMIO_PROD", t)
         self.assertEqual(t["DESC_VIANDAS"], -20000.0)
-        self.assertEqual(t["NET"], 325083.42)
+        self.assertEqual(t["NET"], 317037.77)
 
     def test_compute_never_touches_inputs(self):
         run = self._create_run("1° Quincena", "2026-09-01", "2026-09-15", self.jornal)
@@ -199,10 +201,15 @@ class TestNovedades(TransactionCase):
         self._set(slip, "VAC_DIAS", 14.0)
         slip.compute_sheet()
         t = self._totals(slip)
-        self.assertEqual(t["BASIC_MENSUAL"], 666666.72)
+        self.assertEqual(t["BASIC_MENSUAL"], 666666.67)
         self.assertEqual(t["VACACIONES_MENSUAL"], 700000.0)
         self.assertEqual(t["ADIC_ANTIG"], 41000.0)
-        self.assertEqual(t["NET"], 1133171.67)
+
+    def test_mensual_full_month_pays_exact_wage(self):
+        run = self._create_run("Mensual", "2026-09-01", "2026-09-30", self.mensual)
+        slip = self._slip(run, self.mensual)
+        slip.compute_sheet()
+        self.assertEqual(self._totals(slip)["BASIC_MENSUAL"], 1250000.0)
 
     def test_csv_import(self):
         run = self._create_run("1° Quincena", "2026-09-01", "2026-09-15", self.jornal | self.jornal_2)
@@ -232,3 +239,36 @@ class TestNovedades(TransactionCase):
             form.date_to = "2026-09-15"
         slip = form.record
         self.assertEqual(self._inp(slip, "HS_NORM"), 88.0)
+
+    def test_calendar_has_only_module_attendances(self):
+        cal = self.env.ref("payroll_arg.resource_calendar_jornal_44h")
+        self.assertEqual(len(cal.attendance_ids), 10)
+        self.assertAlmostEqual(cal.hours_per_day, 8.8, places=2)
+        self.assertAlmostEqual(cal.hours_per_week, 44.0, places=2)
+
+    def test_specialized_structures_charge_rate_contributions(self):
+        run = self._create_run("SAC", "2026-06-01", "2026-06-30", self.jornal)
+        slip = self._slip(run, self.jornal)
+        slip._set_input_amounts({"SAC_BASE": 1000000, "SAC_DIAS": 180})
+        slip.compute_sheet()
+        t = self._totals(slip)
+        self.assertEqual(t["SAC_JORNAL"], 500000.0)
+        self.assertEqual(t["COMP_ART"], 29100.0, "SAC contribuye sobre su propio remunerativo")
+        for code in ("COMP_JUB", "COMP_OS", "COMP_AAFF", "COMP_FNE", "COMP_INSSJP"):
+            self.assertIn(code, t)
+        self.assertNotIn("COMP_SCVO", t, "Las cuotas fijas mensuales no se repiten en el SAC")
+
+    def test_category_change_keeps_negotiated_wage(self):
+        contract = self.jornal.version_id
+        other = self.env.ref("payroll_arg.afip_cat_uom_medio_oficial")
+        contract.wage = 9999.0
+        contract.labor_category_id = other
+        self.assertEqual(contract.wage, 9999.0)
+
+    def test_sac_jornal_estimate_uses_calendar_weekly_hours(self):
+        run = self._create_run("SAC", "2026-06-01", "2026-06-30", self.jornal)
+        slip = self._slip(run, self.jornal)
+        slip._set_input_amounts({"SAC_DIAS": 180})
+        slip.compute_sheet()
+        # 4.500 $/h × 44 hs/sem × 4,333 sem/mes × 50%
+        self.assertAlmostEqual(self._totals(slip)["SAC_JORNAL"], 4500 * 44 * 4.333 * 0.5, places=2)

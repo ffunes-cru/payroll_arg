@@ -33,6 +33,7 @@
                             <field name="art_fixed_fee"/>
                             <field name="life_insurance_fee"/>
                             <field name="uom_life_insurance_fee"/>
+                            <field name="uom_life_insurance_employee_fee"/>
                             <field name="detraccion_sipa"/>
                         </group>
                         <group string="Retenciones Legales (A cargo del Trabajador)">

@@ -265,8 +265,15 @@ result = payslip.antiguedad_anios > 0 and bool(contract.is_convencionado)
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# 1% por año sobre las horas pagadas a valor hora (normales + feriados + extras con su
+# recargo); premios y presentismo quedan afuera. Mensualizados: remunerativo hasta aquí.
+if contract.wage_type == 'hourly':
+    horas = inp('HS_NORM') + inp('FERIADO') + inp('HS_EXT50') * 1.5 + inp('HS_EXT100') * 2.0
+    base = horas * contract.wage
+else:
+    base = categories.REM
 result_rate = payslip.antiguedad_anios * 1.0
-result = categories.REM
+result = base
             </field>
         </record>
 
@@ -442,8 +449,31 @@ result = - (categories.REM + categories.NOREM)
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
-ret_val = payslip._calculate_ganancias_from_rules(categories.REM, categories.RET)
+ret_val = payslip._calculate_ganancias_from_rules(categories.REM, categories.DED)
 result = - abs(round(ret_val, 2)) if ret_val > 0 else 0.0
+            </field>
+        </record>
+
+        <!-- Regla: Seguro de Vida UOM (aporte del trabajador, no en 1° Quincena) -->
+        <record id="rule_jornal_ret_uom_vida" model="hr.salary.rule">
+            <field name="name">Seg. de Vida UOM</field>
+            <field name="sequence" eval="155"/>
+            <field name="code">RET_UOM_VIDA</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">820002</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+is_uom = bool(contract.cct_id and 'UOM' in (contract.cct_id.name or contract.cct_id.code or '').upper())
+result = (is_uom or bool(contract.is_convencionado)) and not payroll.is_q1
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+fee = payslip.company_id.uom_life_insurance_employee_fee
+if not fee:
+    raise ValueError("Falta configurar el Seguro de Vida UOM (trabajador) en la compañía " + str(payslip.company_id.name or ''))
+result = - fee
             </field>
         </record>
 
@@ -505,18 +535,6 @@ result = categories.REM + categories.NOREM + categories.DED
         <!-- Se calculan únicamente en 2° Quincena y liquidaciones    -->
         <!-- mensuales. En 1° Quincena no aplican contribuciones.     -->
         <!-- ======================================================== -->
-        <!-- Regla Deprecada para compatibilidad con líneas de recibos históricos existentes -->
-        <record id="rule_jornal_contribuciones" model="hr.salary.rule">
-            <field name="name">Contribuciones Patronales Seg. Social (Deprecada)</field>
-            <field name="sequence" eval="999"/>
-            <field name="code">COMP_PATRONAL_OLD</field>
-            <field name="category_id" ref="cat_comp"/>
-            <field name="tipo_concepto">4</field>
-            <field name="active" eval="False"/>
-            <field name="condition_select">none</field>
-            <field name="amount_select">fix</field>
-            <field name="amount_fix">0.0</field>
-        </record>
 
         <!-- 1. Contribución ART (Variable según póliza ART) -->
         <record id="rule_jornal_contribuciones_art" model="hr.salary.rule">
@@ -676,14 +694,14 @@ result = fee
             <field name="condition_select">python</field>
             <field name="condition_python">
 is_uom = bool(contract.cct_id and 'UOM' in (contract.cct_id.name or contract.cct_id.code or '').upper())
-result = is_uom or bool(contract.is_convencionado)
+result = (is_uom or bool(contract.is_convencionado)) and not payroll.is_q1
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 fee = payslip.company_id.uom_life_insurance_fee
 if not fee:
     raise ValueError("Falta configurar el Seguro de Vida UOM en la compañía " + str(payslip.company_id.name or ''))
-result = 0.0 if payroll.is_q1 else fee
+result = fee
             </field>
         </record>
 
@@ -811,7 +829,7 @@ result = (inp('SAC_BASE') or contract.wage) * 0.50
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # SAC Jornal — 50% de la remuneración mensual habitual semestral
-hours_weekly = contract.resource_calendar_id.full_time_required_hours or 44.0
+hours_weekly = contract.resource_calendar_id.hours_per_week or 44.0
 base_rem = inp('SAC_BASE') or contract.wage * hours_weekly * 4.333
 dias_sem = inp('SAC_DIAS') or 180.0
 result_qty = min(1.0, max(0.0, dias_sem / 180.0))
@@ -899,7 +917,7 @@ result = inp('SAC_DIAS') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
-hours_weekly = contract.resource_calendar_id.full_time_required_hours or 44.0
+hours_weekly = contract.resource_calendar_id.hours_per_week or 44.0
 base_rem = inp('SAC_BASE') or contract.wage * hours_weekly * 4.333
 result_qty = min(1.0, max(0.0, inp('SAC_DIAS') / 180.0))
 result = base_rem * 0.50
@@ -1059,6 +1077,7 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_obra_social'),
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
+                ref('rule_jornal_ret_uom_vida'),
                 ref('rule_jornal_aporte_adic_ss'),
                 ref('rule_jornal_descuento_viandas'),
                 ref('rule_jornal_neto'),
@@ -1090,6 +1109,7 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_obra_social'),
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
+                ref('rule_jornal_ret_uom_vida'),
                 ref('rule_jornal_neto'),
                 ref('rule_jornal_contribuciones_art'),
                 ref('rule_jornal_contrib_jub'),
@@ -1115,9 +1135,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
 
@@ -1134,9 +1157,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
 
@@ -1153,9 +1179,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
 
@@ -1172,9 +1201,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
 
@@ -1196,9 +1228,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
 
@@ -1220,9 +1255,12 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_sindicato'),
                 ref('rule_jornal_ganancias'),
                 ref('rule_jornal_neto'),
-                ref('rule_jornal_contribuciones'),
-                ref('rule_jornal_contribuciones_os'),
                 ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
     </data>

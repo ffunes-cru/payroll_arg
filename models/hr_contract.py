@@ -129,7 +129,7 @@ class HrContract(models.Model):
             cal = self.env.ref("payroll_arg.resource_calendar_jornal_44h", raise_if_not_found=False)
             if not cal:
                 cal = self.env["resource.calendar"].search(
-                    [("full_time_required_hours", "=", 44)], limit=1
+                    [("hours_per_week", "=", 44)], limit=1
                 )
             if not cal:
                 _logger.warning(
@@ -141,7 +141,7 @@ class HrContract(models.Model):
             cal = self.env.ref("payroll_arg.resource_calendar_mensual_40h", raise_if_not_found=False)
             if not cal:
                 cal = self.env["resource.calendar"].search(
-                    [("full_time_required_hours", "in", [40, 48])], limit=1
+                    [("hours_per_week", "in", [40, 48])], limit=1
                 )
             if not cal:
                 _logger.warning(
@@ -196,13 +196,13 @@ class HrContract(models.Model):
         if self.resource_calendar_id:
             cal = self.resource_calendar_id
             name = (cal.name or "").lower()
-            if "jornal" in name or "fábrica" in name or "fabrica" in name or cal.full_time_required_hours == 44:
+            if "jornal" in name or "fábrica" in name or "fabrica" in name or cal.hours_per_week == 44:
                 self.wage_type = "hourly"
                 self.schedule_pay = "bi-weekly"
                 struct = self._get_default_struct("hourly")
                 if struct:
                     self.struct_id = struct
-            elif "mensual" in name or "admin" in name or cal.full_time_required_hours in (40, 48):
+            elif "mensual" in name or "admin" in name or cal.hours_per_week in (40, 48):
                 self.wage_type = "monthly"
                 self.schedule_pay = "monthly"
                 struct = self._get_default_struct("monthly")
@@ -315,16 +315,23 @@ class HrContract(models.Model):
 
     def write(self, vals):
         cat_id = vals.get("labor_category_id")
-        w_type = vals.get("wage_type")
-        if cat_id:
-            cat = self.env["afip.labor.category"].browse(cat_id)
-            if cat.category_type and "wage_type" not in vals:
-                if any(rec.wage_type != cat.category_type for rec in self):
-                    vals["wage_type"] = cat.category_type
-                    w_type = cat.category_type
-            if "wage" not in vals:
-                target_type = w_type or (self[:1].wage_type if self else "monthly")
-                vals["wage"] = cat.hourly_wage if target_type == "hourly" else cat.monthly_wage
+        if not cat_id:
+            return self._write_unwrapping_errors(vals)
+        cat = self.env["afip.labor.category"].browse(cat_id)
+        for rec in self:
+            rec_vals = dict(vals)
+            if cat.category_type and "wage_type" not in vals and rec.wage_type != cat.category_type:
+                rec_vals["wage_type"] = cat.category_type
+            # El sueldo sólo sigue a la categoría si no fue pactado distinto al de la categoría anterior
+            old_cat = rec.labor_category_id
+            wage_is_default = not rec.wage or rec.wage in (old_cat.hourly_wage, old_cat.monthly_wage)
+            if "wage" not in vals and wage_is_default:
+                target_type = rec_vals.get("wage_type") or rec.wage_type or "monthly"
+                rec_vals["wage"] = cat.hourly_wage if target_type == "hourly" else cat.monthly_wage
+            rec._write_unwrapping_errors(rec_vals)
+        return True
+
+    def _write_unwrapping_errors(self, vals):
         try:
             return super().write(vals)
         except ValidationError as e:
