@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_payslip_form_payroll_arg" model="ir.ui.view">
+        <field name="name">hr.payslip.form.payroll.arg</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_open_export_wizard"
+                    type="object"
+                    string="Imprimir Recibo de Sueldo"
+                    class="oe_highlight btn-info"
+                    invisible="state == 'cancel'"
+                />
+            </xpath>
+            <xpath expr="//button[@name='onchange_employee']" position="attributes">
+                <attribute name="invisible">state != 'draft'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='struct_id']" position="attributes">
+                <attribute name="readonly">state != 'draft'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='worked_days_line_ids']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//group[@name='right']" position="inside">
+                <field name="wage_type" invisible="not contract_id"/>
+                <field name="cct_id" invisible="not contract_id"/>
+                <field name="labor_category_id" invisible="not contract_id"/>
+                <field name="contract_wage" invisible="not contract_id"/>
+                <field name="payment_date" readonly="state == 'done'"/>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <group string="Resumen de Liquidación Argentina">
+                    <!-- Resumen de horas para Jornalizados con override manual -->
+                    <group string="Cálculo de Horas Netas (Jornal)" invisible="wage_type != 'hourly'">
+                        <field name="hours_theoretical" readonly="1"/>
+                        <field name="hours_leaves" readonly="1"/>
+                        <field name="hours_normal" readonly="1" style="font-weight: bold; color: #007bff;"/>
+                        <field name="hours_ext50" readonly="1"/>
+                        <field name="hours_ext100" readonly="1"/>
+                        <field name="total_hours_worked" readonly="1" style="font-weight: bold;"/>
+                        <field name="hours_source" readonly="1" widget="text"
+                               style="font-style: italic; color: #6c757d; font-size: 0.85em;"/>
+                    </group>
+                    <!-- Resumen con resta de días para Mensualizados (100% readonly) -->
+                    <group string="Cálculo de Días Netos (Mensual)" invisible="wage_type == 'hourly'">
+                        <field name="days_theoretical" readonly="1"/>
+                        <field name="total_days_vacation" readonly="1"/>
+                        <field name="total_days_worked" readonly="1" style="font-weight: bold; color: #007bff;"/>
+                        <field name="days_source" readonly="1" widget="text"
+                               style="font-style: italic; color: #6c757d; font-size: 0.85em;"/>
+                    </group>
+                    <!-- Origen de vacaciones (visible si hay vacaciones) -->
+                    <group invisible="total_days_vacation == 0">
+                        <field name="vacation_source" readonly="1" widget="text"
+                               style="font-style: italic; color: #6c757d; font-size: 0.85em;"/>
+                    </group>
+                    <!-- Bases Imponibles y Topes Legales (Ley 24.241) -->
+                    <group string="Bases Imponibles y Topes Previsionales (Ley 24.241)">
+                        <field name="tope_imponible_retenciones" readonly="state != 'draft'"/>
+                        <field name="base_imponible_seg_social" readonly="1" style="font-weight: bold;"/>
+                        <field name="is_tope_applied" readonly="1" invisible="not is_tope_applied"/>
+                        <field name="prev_month_gross_arca" readonly="1" invisible="wage_type != 'hourly'"/>
+                        <field name="prev_month_gross_manual" readonly="state != 'draft'" invisible="wage_type != 'hourly'"/>
+                    </group>
+                    <!-- Antigüedad -->
+                    <group string="Antigüedad">
+                        <field name="antiguedad_anios" readonly="1" style="font-weight: bold;"/>
+                        <field name="antiguedad_override" widget="boolean_toggle" readonly="state != 'draft'"/>
+                        <field name="antiguedad_anios_manual" readonly="state != 'draft'" invisible="not antiguedad_override"/>
+                    </group>
+                    <!-- Ganancias 4ta Categoría -->
+                    <group string="Ganancias 4ta Categoría">
+                        <field name="ganancias_status" readonly="1" style="font-weight: bold;" invisible="not has_ganancias_retention and ganancias_override == 0"/>
+                        <field name="ganancias_amount" readonly="1" invisible="not has_ganancias_retention and ganancias_override == 0"/>
+                        <field name="ganancias_override" readonly="state != 'draft'"/>
+                    </group>
+                    <field name="is_quincenal" invisible="1"/>
+                    <!-- Novedades Variables de la Quincena -->
+                    <group string="Novedades Variables de la Quincena" invisible="not is_quincenal or state in ('done', 'cancel')">
+                        <field name="cant_feriados" readonly="state in ('done', 'cancel')"/>
+                        <field name="premio_prod_ok" widget="boolean_toggle" readonly="state in ('done', 'cancel')"/>
+                        <field name="presentismo_ok" widget="boolean_toggle" readonly="state in ('done', 'cancel')"/>
+                        <field name="portitulo_ok" widget="boolean_toggle" readonly="state in ('done', 'cancel')"/>
+                        <field name="monto_objetivos" readonly="state in ('done', 'cancel')"/>
+                        <field name="gratif_no_rem_ok" widget="boolean_toggle" readonly="state in ('done', 'cancel')"/>
+                        <field name="monto_gratif_no_rem" readonly="state in ('done', 'cancel')" invisible="not gratif_no_rem_ok"/>
+                        <field name="compens_no_rem_ok" widget="boolean_toggle" readonly="state in ('done', 'cancel')"/>
+                        <field name="monto_compens_no_rem" readonly="state in ('done', 'cancel')" invisible="not compens_no_rem_ok"/>
+                        <field name="cant_viandas" readonly="state in ('done', 'cancel')"/>
+                        <field name="precio_vianda" readonly="state in ('done', 'cancel')"/>
+                    </group>
+                    <group string="Totales Monetarios">
+                        <field name="total_remunerativo" readonly="1"/>
+                        <field name="total_no_remunerativo" readonly="1"/>
+                        <field name="total_retenciones" readonly="1"/>
+                        <field name="neto_liquidacion" readonly="1" class="oe_subtotal_footer_separator" style="font-size: 1.25em; font-weight: bold; color: #28a745;"/>
+                        <field name="total_contribuciones" readonly="1" style="font-weight: bold; color: #dc3545;"/>
+                        <field name="costo_total_empleador" readonly="1" style="font-weight: bold; color: #007bff;"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page name="contribuciones_patronales" string="Contribuciones Patronales">
+                    <group string="Bases y Parámetros no inferibles de la tabla">
+                        <group>
+                            <field name="snapshot_tope_imponible" readonly="1"/>
+                            <field name="snapshot_detraccion_sipa" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="snapshot_art_fixed_fee" readonly="1"/>
+                            <field name="coef_contrib_ss" readonly="state != 'draft'"/>
+                            <field name="coef_contrib_os" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Totales Patronales">
+                        <group>
+                            <field name="total_contribuciones" readonly="1" style="font-weight: bold; font-size: 1.1em; color: #dc3545;"/>
+                        </group>
+                        <group>
+                            <field name="costo_total_empleador" readonly="1" style="font-weight: bold; font-size: 1.1em; color: #007bff;"/>
+                        </group>
+                    </group>
+                    <separator string="Detalle de Contribuciones Patronales"/>
+                    <field name="contribucion_line_ids" readonly="1">
+                        <list decoration-info="total > 0">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="rate" string="Alícuota %"/>
+                            <field name="amount" string="Base / Monto"/>
+                            <field name="total" string="Total Contribución" sum="Total"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record id="view_payslip_tree_payroll_arg" model="ir.ui.view">
+        <field name="name">hr.payslip.tree.payroll.arg</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_id']" position="attributes">
+                <attribute name="readonly">state != 'draft'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_print_recibo_arg_server" model="ir.actions.server">
+        <field name="name">Imprimir Recibo Oficial (Argentina PDF)</field>
+        <field name="model_id" ref="payroll.model_hr_payslip"/>
+        <field name="binding_model_id" ref="payroll.model_hr_payslip"/>
+        <field name="binding_type">report</field>
+        <field name="state">code</field>
+        <field name="code">
+action = records[:1].action_open_export_wizard()
+        </field>
+    </record>
+</odoo>

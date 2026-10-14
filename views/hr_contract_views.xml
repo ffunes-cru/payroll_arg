@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_contract_form_payroll_arg" model="ir.ui.view">
+        <field name="name">hr.version.form.payroll.arg</field>
+        <field name="model">hr.version</field>
+        <field name="inherit_id" ref="payroll.hr_contract_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='schedule_pay']" position="before">
+                <field name="wage_type"/>
+                <field name="cct_id"/>
+                <field name="labor_category_id" domain="[('category_type', '=', wage_type)]" options="{'no_create': True}"/>
+            </xpath>
+            <xpath expr="//group[@name='contract']" position="after">
+                <group string="Parámetros AFIP / ARCA (Nómina Argentina)">
+                    <group string="Modalidad y Situación">
+                        <field name="afip_contract_type_id"/>
+                        <field name="afip_situation_id"/>
+                        <field name="afip_condition_id"/>
+                        <field name="afip_activity_id"/>
+                        <field name="afip_zone_id"/>
+                        <field name="afip_siniestrado_id"/>
+                    </group>
+                    <group string="Reglas de Contribución">
+                        <field name="is_convencionado"/>
+                        <field name="has_reduction"/>
+                        <field name="has_mandatory_life_insurance"/>
+                        <field name="additional_ss_contrib_percent"/>
+                        <field name="aporte_adicional_ss_monto"/>
+                        <field name="diff_task_contrib_percent"/>
+                        <field name="additional_health_insurance_amount"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

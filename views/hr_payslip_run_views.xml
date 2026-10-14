@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_payslip_run_form_payroll_arg" model="ir.ui.view">
+        <field name="name">hr.payslip.run.form.payroll.arg</field>
+        <field name="model">hr.payslip.run</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_run_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='close_payslip_run']" position="attributes">
+                <attribute name="string">Cerrar Lote</attribute>
+                <attribute name="confirm">¿Está seguro de cerrar el lote? Todos los recibos en borrador y en espera serán confirmados automáticamente.</attribute>
+            </xpath>
+            <xpath expr="//button[@name='%(payroll.action_hr_payslip_by_employees)d']" position="attributes">
+                <attribute name="string">Generar Recibos</attribute>
+            </xpath>
+            <xpath expr="//button[@name='draft_payslip_run']" position="attributes">
+                <attribute name="string">Volver a Borrador</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <field name="has_hourly_payslips" invisible="1"/>
+                <field name="is_quincenal" invisible="1"/>
+                <button
+                    name="action_open_hours_wizard"
+                    type="object"
+                    string="Carga Masiva de Horas (Jornales)"
+                    class="oe_highlight btn-success"
+                    invisible="state != 'draft' or not has_hourly_payslips"
+                />
+                <button
+                    name="action_compute_payslips"
+                    type="object"
+                    string="Recalcular Recibos"
+                    class="oe_highlight btn-primary"
+                    invisible="state != 'draft'"
+                />
+                <button
+                    name="action_open_export_wizard"
+                    type="object"
+                    string="Exportar Reportes Argentina (PDF / AFIP / Banco)"
+                    class="oe_highlight btn-info"
+                />
+            </xpath>
+            <xpath expr="//field[@name='struct_id']" position="replace"/>
+            <xpath expr="//group[@name='period_group']" position="after">
+                <group string="Parámetros de Liquidación AFIP / ARCA">
+                    <field name="tipo_liquidacion"/>
+                    <field name="afip_nro_liquidacion"/>
+                    <field name="payment_date"/>
+                    <field name="struct_id" string="Estructura Salarial (Opcional)" options="{'no_create': True}" placeholder="Automática según tipo de liquidación y contrato"/>
+                    <field name="coef_contrib_ss" readonly="state != 'draft'"/>
+                    <field name="coef_contrib_os" readonly="state != 'draft'"/>
+                </group>
+                <group string="Novedades Variables de la Quincena" invisible="state != 'draft' or not is_quincenal">
+                    <field name="cant_feriados" string="Feriados (Hs)"
+                           help="Cantidad de horas de feriado de la quincena a liquidar para todos los operarios del lote."/>
+                    <field name="monto_premio_produccion"
+                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Premio' en la tabla de abajo."/>
+                    <field name="monto_presentismo"
+                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Present.' en la tabla de abajo."/>
+                    <field name="monto_portitulo"
+                           help="Monto fijo que recibirán los empleados marcados con el toggle 'Portít.' en la tabla de abajo."/>
+                    <field name="monto_gratif_no_rem"
+                           help="Monto de la Gratificación Extraordinaria No Remunerativa para esta quincena."/>
+                    <field name="monto_compens_no_rem"
+                           help="Monto de la Compensación Extraordinaria No Remunerativa para esta quincena."/>
+                    <field name="precio_vianda" string="Precio Vianda ($)"
+                           help="Precio unitario de vianda a descontar en esta quincena para los operarios del lote."/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='slip_ids']" position="replace">
+                <field name="slip_ids" readonly="state == 'close'" context="{'default_payslip_run_id': id, 'default_date_from': date_start, 'default_date_to': date_end}">
+                    <list decoration-muted="state == 'cancel'" editable="bottom" create="0">
+                        <field name="number" decoration-bf="1" optional="show" readonly="1"/>
+                        <field name="employee_id" readonly="1"/>
+                        <field name="name" optional="show" readonly="1"/>
+                        <field name="date_from" readonly="1" optional="hide"/>
+                        <field name="date_to" readonly="1" optional="hide"/>
+                        <field name="hours_normal" optional="show" string="Hs Norm" readonly="1"/>
+                        <field name="cant_feriados" optional="show" string="Feriados (Hs)"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')"/>
+                        <field name="cant_viandas" optional="show" string="Viandas"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')"/>
+                        <field name="hours_ext50" optional="show" string="Hs Ext50" readonly="1"/>
+                        <field name="hours_ext100" optional="show" string="Hs Ext100" readonly="1"/>
+                        <field name="antiguedad_anios" optional="show" string="Antig." readonly="1"/>
+                        <field name="antiguedad_override" string="Override Antig." widget="boolean_toggle"
+                               readonly="state in ('done', 'cancel')" optional="hide"/>
+                        <field name="antiguedad_anios_manual" string="Antig. Manual"
+                               readonly="state in ('done', 'cancel') or not antiguedad_override" optional="hide"/>
+                        <field name="premio_prod_ok" string="Premio" widget="boolean_toggle"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="presentismo_ok" string="Present." widget="boolean_toggle"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="portitulo_ok" string="Portít." widget="boolean_toggle"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="monto_objetivos" string="Objetivos $"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="gratif_no_rem_ok" string="Gratif. NR" widget="boolean_toggle"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="monto_gratif_no_rem" string="Gratif. $"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="compens_no_rem_ok" string="Compens. NR" widget="boolean_toggle"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="monto_compens_no_rem" string="Compens. $"
+                               column_invisible="not parent.is_quincenal"
+                               readonly="state in ('done', 'cancel')" optional="show"/>
+                        <field name="total_remunerativo" optional="show" widget="monetary" readonly="1"/>
+                        <field name="neto_liquidacion" optional="show" widget="monetary" decoration-bf="1" decoration-success="1" readonly="1"/>
+                        <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'verify'" decoration-info="state == 'draft'" decoration-danger="state == 'cancel'" readonly="1"/>
+                        <button name="action_open_payslip" type="object" icon="fa-external-link" title="Abrir Recibo Completo"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+
+    </record>
+</odoo>

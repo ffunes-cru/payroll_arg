@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_payroll_arg_root"
+        name="Nómina Argentina"
+        parent="payroll.payroll_menu_root"
+        sequence="50"
+    />
+
+    <menuitem
+        id="menu_payroll_arg_employee_wizard"
+        name="Importar / Exportar Empleados"
+        parent="menu_payroll_arg_root"
+        action="action_payroll_arg_employee_wizard"
+        sequence="5"
+    />
+
+    <menuitem
+        id="menu_afip_cct"
+        name="Convenios Colectivos (CCT)"
+        parent="menu_payroll_arg_root"
+        action="action_afip_cct"
+        sequence="10"
+    />
+
+    <menuitem
+        id="menu_afip_labor_category"
+        name="Categorías Laborales"
+        parent="menu_payroll_arg_root"
+        action="action_afip_labor_category"
+        sequence="20"
+    />
+
+    <menuitem
+        id="menu_afip_health_insurance"
+        name="Obras Sociales (RNOS)"
+        parent="menu_payroll_arg_root"
+        action="action_afip_health_insurance"
+        sequence="30"
+    />
+
+    <menuitem
+        id="menu_afip_contract_type"
+        name="Modalidades de Contratación"
+        parent="menu_payroll_arg_root"
+        action="action_afip_contract_type"
+        sequence="40"
+    />
+
+    <menuitem
+        id="menu_afip_situation"
+        name="Situaciones de Revista"
+        parent="menu_payroll_arg_root"
+        action="action_afip_situation"
+        sequence="50"
+    />
+
+    <menuitem
+        id="menu_resource_calendar_payroll_arg"
+        name="Horarios y Reglas de Horas Extras"
+        parent="menu_payroll_arg_root"
+        action="resource.action_resource_calendar_form"
+        sequence="60"
+    />
+
+    <menuitem
+        id="menu_hr_ganancias_scale"
+        name="Ganancias: Escalas y Deducciones Art. 94"
+        parent="menu_payroll_arg_root"
+        action="action_hr_ganancias_scale"
+        sequence="70"
+    />
+
+    <menuitem
+        id="menu_hr_ganancias_accumulator"
+        name="Ganancias: Acumuladores por Empleado"
+        parent="menu_payroll_arg_root"
+        action="action_hr_ganancias_accumulator"
+        sequence="80"
+    />
+
+    <menuitem
+        id="menu_hr_siradig_f572"
+        name="Ganancias: Declaraciones SIRADIG (F.572)"
+        parent="menu_payroll_arg_root"
+        action="action_hr_siradig_f572"
+        sequence="85"
+    />
+
+    <menuitem
+        id="menu_hr_siradig_import_wizard"
+        name="Importar SIRADIG AFIP (XML / ZIP)"
+        parent="menu_payroll_arg_root"
+        action="action_hr_siradig_import_wizard"
+        sequence="86"
+    />
+</odoo>

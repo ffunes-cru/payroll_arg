@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_payroll_arg_employee_wizard_form" model="ir.ui.view">
+        <field name="name">payroll.arg.employee.wizard.form</field>
+        <field name="model">payroll.arg.employee.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Gestión Masiva de Empleados (Excel / CSV)">
+                <field name="state" invisible="1"/>
+                <sheet>
+                    <div invisible="state != 'choose'">
+                        <p class="text-muted" style="margin-bottom: 15px;">
+                            Esta herramienta permite exportar una plantilla base formateada en Excel o importar masivamente empleados nuevos y existentes actualizando su convenio, categoría, sueldo y cuentas bancarias.
+                        </p>
+                        <group>
+                            <field name="operation_mode" widget="radio"/>
+                        </group>
+
+                        <!-- Sección de Exportación -->
+                        <div invisible="operation_mode != 'export'">
+                            <group string="Opciones de Exportación">
+                                <field name="export_type"/>
+                            </group>
+                            <p class="text-info">
+                                <i class="fa fa-info-circle"/> Se generará una planilla Excel (.xlsx) con las columnas requeridas (Legajo, CUIL, Tipo Salario, Convenio, Categoría, Sueldo, Obra Social, CBU, etc.).
+                            </p>
+                            <footer>
+                                <button name="action_export_excel" string="Generar y Descargar Archivo Excel" type="object" class="btn-primary" icon="fa-download"/>
+                                <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                            </footer>
+                        </div>
+
+                        <!-- Sección de Importación -->
+                        <div invisible="operation_mode != 'import'">
+                            <group string="Carga del Archivo">
+                                <field name="filename" invisible="1"/>
+                                <field name="data_file" filename="filename" string="Archivo Excel o CSV"/>
+                            </group>
+                            <p class="text-info">
+                                <i class="fa fa-info-circle"/> Los empleados existentes (coincidencia por CUIL o Legajo) serán actualizados, y los nuevos empleados serán creados junto con sus contratos de nómina.
+                            </p>
+                            <footer>
+                                <button name="action_import_file" string="Importar y Actualizar Empleados" type="object" class="btn-primary" icon="fa-upload"/>
+                                <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                            </footer>
+                        </div>
+                    </div>
+
+                    <!-- Estado Completado -->
+                    <div invisible="state != 'done'">
+                        <div class="alert alert-success" role="alert" style="white-space: pre-line; margin-bottom: 20px;">
+                            <field name="result_summary" readonly="1"/>
+                        </div>
+                        <group invisible="not export_file">
+                            <field name="export_filename" invisible="1"/>
+                            <field name="export_file" filename="export_filename" widget="binary" string="Descargar Archivo Generado"/>
+                        </group>
+                        <footer>
+                            <button string="Finalizar" class="btn-primary" special="cancel"/>
+                        </footer>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_payroll_arg_employee_wizard" model="ir.actions.act_window">
+        <field name="name">Importar / Exportar Empleados</field>
+        <field name="res_model">payroll.arg.employee.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- ======================================================== -->
+        <!-- 1. EMPLEADOS JORNALIZADOS (UOM - QUINCENAL - VALOR HORA)  -->
+        <!-- ======================================================== -->
+        <!-- Juan Carlos Pérez - Oficial Metalúrgico ($4.500/h) -->
+        <record id="emp_jornal_demo_perez" model="hr.employee">
+            <field name="name">Juan Carlos Pérez</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="cuil">20301234563</field>
+            <field name="legajo">1001</field>
+            <field name="payment_type">3</field>
+            <field name="cbu">0170099220000012345678</field>
+            <field name="workplace_location">Planta Córdoba</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="labor_category_id" ref="afip_cat_uom_oficial"/>
+            <field name="health_insurance_id" ref="afip_os_osuomra"/>
+            <field name="contract_date_start">2024-01-01</field>
+            <field name="date_version">2024-01-01</field>
+            <field name="resource_calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="wage">4500.0</field>
+            <field name="wage_type">hourly</field>
+            <field name="schedule_pay">bi-weekly</field>
+            <field name="struct_id" ref="structure_jornal_quincenal_arg"/>
+            <field name="is_convencionado" eval="True"/>
+            <field name="afip_contract_type_id" ref="afip_contract_type_001"/>
+            <field name="afip_situation_id" ref="afip_situation_01"/>
+            <field name="afip_condition_id" ref="afip_condition_01"/>
+            <field name="afip_activity_id" ref="afip_activity_001"/>
+            <field name="afip_zone_id" ref="afip_zone_18"/>
+        </record>
+
+        <!-- Esteban Roberto Rossi - Medio Oficial Metalúrgico ($3.800/h) -->
+        <record id="emp_jornal_demo_rossi" model="hr.employee">
+            <field name="name">Esteban Roberto Rossi</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="cuil">20354128919</field>
+            <field name="legajo">1002</field>
+            <field name="payment_type">3</field>
+            <field name="cbu">0170099220000087654321</field>
+            <field name="workplace_location">Planta Córdoba</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="labor_category_id" ref="afip_cat_uom_medio_oficial"/>
+            <field name="health_insurance_id" ref="afip_os_osuomra"/>
+            <field name="contract_date_start">2024-01-01</field>
+            <field name="date_version">2024-01-01</field>
+            <field name="resource_calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="wage">3800.0</field>
+            <field name="wage_type">hourly</field>
+            <field name="schedule_pay">bi-weekly</field>
+            <field name="struct_id" ref="structure_jornal_quincenal_arg"/>
+            <field name="is_convencionado" eval="True"/>
+            <field name="afip_contract_type_id" ref="afip_contract_type_001"/>
+            <field name="afip_situation_id" ref="afip_situation_01"/>
+            <field name="afip_condition_id" ref="afip_condition_01"/>
+            <field name="afip_activity_id" ref="afip_activity_001"/>
+            <field name="afip_zone_id" ref="afip_zone_18"/>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- 2. EMPLEADOS MENSUALIZADOS (ADMINISTRACIÓN / PLANTA)      -->
+        <!-- ======================================================== -->
+        <!-- Marcos Antonio Gómez - Administrativo de Planta ($850.000/mes) -->
+        <record id="emp_mensual_demo_gomez" model="hr.employee">
+            <field name="name">Marcos Antonio Gómez</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="cuil">20287654325</field>
+            <field name="legajo">2001</field>
+            <field name="payment_type">3</field>
+            <field name="cbu">0170099220000055443322</field>
+            <field name="workplace_location">Planta Córdoba</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="labor_category_id" ref="afip_cat_uom_admin_1"/>
+            <field name="health_insurance_id" ref="afip_os_osecac"/>
+            <field name="contract_date_start">2024-01-01</field>
+            <field name="date_version">2024-01-01</field>
+            <field name="resource_calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="wage">850000.0</field>
+            <field name="wage_type">monthly</field>
+            <field name="schedule_pay">monthly</field>
+            <field name="struct_id" ref="structure_mensual_arg"/>
+            <field name="is_convencionado" eval="True"/>
+            <field name="afip_contract_type_id" ref="afip_contract_type_001"/>
+            <field name="afip_situation_id" ref="afip_situation_01"/>
+            <field name="afip_condition_id" ref="afip_condition_01"/>
+            <field name="afip_activity_id" ref="afip_activity_049"/>
+            <field name="afip_zone_id" ref="afip_zone_18"/>
+        </record>
+
+        <!-- Lucas Gabriel Benítez - Supervisor de Producción ($1.250.000/mes) -->
+        <record id="emp_mensual_demo_benitez" model="hr.employee">
+            <field name="name">Lucas Gabriel Benítez</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="cuil">20321234569</field>
+            <field name="legajo">2002</field>
+            <field name="payment_type">3</field>
+            <field name="cbu">0170099220000099887766</field>
+            <field name="workplace_location">Planta Córdoba</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="labor_category_id" ref="afip_cat_uom_supervisor"/>
+            <field name="health_insurance_id" ref="afip_os_osecac"/>
+            <field name="contract_date_start">2023-01-01</field>
+            <field name="date_version">2023-01-01</field>
+            <field name="resource_calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="wage">1250000.0</field>
+            <field name="wage_type">monthly</field>
+            <field name="schedule_pay">monthly</field>
+            <field name="struct_id" ref="structure_mensual_arg"/>
+            <field name="is_convencionado" eval="True"/>
+            <field name="afip_contract_type_id" ref="afip_contract_type_001"/>
+            <field name="afip_situation_id" ref="afip_situation_01"/>
+            <field name="afip_condition_id" ref="afip_condition_01"/>
+            <field name="afip_activity_id" ref="afip_activity_049"/>
+            <field name="afip_zone_id" ref="afip_zone_18"/>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- 3. LOTE DE LIQUIDACIÓN QUINCENAL (JORNALES UOM)          -->
+        <!-- ======================================================== -->
+        <record id="run_jornal_demo_quincena1_sep" model="hr.payslip.run">
+            <field name="name">1ra Quincena Septiembre 2026 - Jornales UOM</field>
+            <field name="date_start">2026-09-01</field>
+            <field name="date_end">2026-09-15</field>
+            <field name="tipo_liquidacion">1° Quincena</field>
+            <field name="afip_nro_liquidacion">1</field>
+            <field name="payment_date">2026-09-20</field>
+            <field name="struct_id" ref="structure_jornal_quincenal_arg"/>
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+
+        <!-- Recibo 1 Jornal: Juan Carlos Pérez (88 hs normales + 10 hs extras 50% + 4 hs extras 100%) -->
+        <record id="payslip_jornal_demo_perez" model="hr.payslip">
+            <field name="name">Recibo 1Q Sep 2026 - Juan Carlos Pérez</field>
+            <field name="employee_id" ref="emp_jornal_demo_perez"/>
+            <field name="struct_id" ref="structure_jornal_quincenal_arg"/>
+            <field name="date_from">2026-09-01</field>
+            <field name="date_to">2026-09-15</field>
+            <field name="payslip_run_id" ref="run_jornal_demo_quincena1_sep"/>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="input_line_ids" eval="[
+                (0, 0, {'name': 'Horas Normales Trabajadas', 'code': 'HS_NORM', 'amount': 88.0}),
+                (0, 0, {'name': 'Horas Extras al 50%', 'code': 'HS_EXT50', 'amount': 10.0}),
+                (0, 0, {'name': 'Horas Extras al 100%', 'code': 'HS_EXT100', 'amount': 4.0}),
+            ]"/>
+        </record>
+
+        <!-- Recibo 2 Jornal: Esteban Roberto Rossi (44 hs normales + 7 días vacaciones) -->
+        <record id="payslip_jornal_demo_rossi" model="hr.payslip">
+            <field name="name">Recibo 1Q Sep 2026 - Esteban Roberto Rossi</field>
+            <field name="employee_id" ref="emp_jornal_demo_rossi"/>
+            <field name="struct_id" ref="structure_jornal_quincenal_arg"/>
+            <field name="date_from">2026-09-01</field>
+            <field name="date_to">2026-09-15</field>
+            <field name="payslip_run_id" ref="run_jornal_demo_quincena1_sep"/>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="input_line_ids" eval="[
+                (0, 0, {'name': 'Horas Normales Trabajadas', 'code': 'HS_NORM', 'amount': 44.0}),
+                (0, 0, {'name': 'Días de Vacaciones Gozadas', 'code': 'VAC_DIAS', 'amount': 7.0}),
+            ]"/>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- 4. LOTE DE LIQUIDACIÓN MENSUAL (ADMINISTRACIÓN)          -->
+        <!-- ======================================================== -->
+        <record id="run_mensual_demo_sep" model="hr.payslip.run">
+            <field name="name">Mes Septiembre 2026 - Mensuales Administración</field>
+            <field name="date_start">2026-09-01</field>
+            <field name="date_end">2026-09-30</field>
+            <field name="tipo_liquidacion">Mensual</field>
+            <field name="afip_nro_liquidacion">2</field>
+            <field name="payment_date">2026-10-04</field>
+            <field name="struct_id" ref="structure_mensual_arg"/>
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+
+        <!-- Recibo 1 Mensual: Marcos Antonio Gómez ($850.000/mes - Mes Completo Trabajado) -->
+        <record id="payslip_mensual_demo_gomez" model="hr.payslip">
+            <field name="name">Recibo Sep 2026 - Marcos Antonio Gómez</field>
+            <field name="employee_id" ref="emp_mensual_demo_gomez"/>
+            <field name="struct_id" ref="structure_mensual_arg"/>
+            <field name="date_from">2026-09-01</field>
+            <field name="date_to">2026-09-30</field>
+            <field name="payslip_run_id" ref="run_mensual_demo_sep"/>
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+
+        <!-- Recibo 2 Mensual: Lucas Gabriel Benítez ($1.250.000/mes - 16 Días Trabajados + 14 Días Vacaciones LCT) -->
+        <record id="payslip_mensual_demo_benitez" model="hr.payslip">
+            <field name="name">Recibo Sep 2026 - Lucas Gabriel Benítez</field>
+            <field name="employee_id" ref="emp_mensual_demo_benitez"/>
+            <field name="struct_id" ref="structure_mensual_arg"/>
+            <field name="date_from">2026-09-01</field>
+            <field name="date_to">2026-09-30</field>
+            <field name="payslip_run_id" ref="run_mensual_demo_sep"/>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="input_line_ids" eval="[
+                (0, 0, {'name': 'Días de Vacaciones Gozadas', 'code': 'VAC_DIAS', 'amount': 14.0}),
+            ]"/>
+        </record>
+    </data>
+</odoo>

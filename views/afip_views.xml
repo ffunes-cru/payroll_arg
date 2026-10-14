@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- CCT -->
+    <record id="view_afip_cct_tree" model="ir.ui.view">
+        <field name="name">afip.cct.list</field>
+        <field name="model">afip.cct</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="union_rate"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_afip_cct_form" model="ir.ui.view">
+        <field name="name">afip.cct.form</field>
+        <field name="model">afip.cct</field>
+        <field name="arch" type="xml">
+            <form string="Convenio Colectivo de Trabajo">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="union_rate"/>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_afip_cct" model="ir.actions.act_window">
+        <field name="name">Convenios Colectivos (CCT)</field>
+        <field name="res_model">afip.cct</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Categorías Laborales -->
+    <record id="view_afip_labor_category_tree" model="ir.ui.view">
+        <field name="name">afip.labor.category.list</field>
+        <field name="model">afip.labor.category</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="category_type"/>
+                <field name="cct_id"/>
+                <field name="hourly_wage"/>
+                <field name="monthly_wage"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_afip_labor_category_form" model="ir.ui.view">
+        <field name="name">afip.labor.category.form</field>
+        <field name="model">afip.labor.category</field>
+        <field name="arch" type="xml">
+            <form string="Categoría Laboral">
+                <header>
+                    <button name="action_update_contract_wages" type="object" string="Actualizar Sueldos de Contratos" class="oe_highlight" icon="fa-refresh" confirm="¿Desea actualizar el sueldo de todos los contratos activos con esta categoría?"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Datos de la Categoría">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="category_type"/>
+                            <field name="cct_id"/>
+                        </group>
+                        <group string="Remuneración Básica de Convenio">
+                            <field name="hourly_wage" invisible="category_type != 'hourly'"/>
+                            <field name="monthly_wage" invisible="category_type != 'monthly'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_afip_labor_category" model="ir.actions.act_window">
+        <field name="name">Categorías Laborales</field>
+        <field name="res_model">afip.labor.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Obras Sociales -->
+    <record id="view_afip_health_insurance_tree" model="ir.ui.view">
+        <field name="name">afip.health.insurance.list</field>
+        <field name="model">afip.health.insurance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="initials"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_afip_health_insurance_form" model="ir.ui.view">
+        <field name="name">afip.health.insurance.form</field>
+        <field name="model">afip.health.insurance</field>
+        <field name="arch" type="xml">
+            <form string="Obra Social (RNOS)">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="initials"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_afip_health_insurance" model="ir.actions.act_window">
+        <field name="name">Obras Sociales (RNOS)</field>
+        <field name="res_model">afip.health.insurance</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Modalidades de Contratación -->
+    <record id="view_afip_contract_type_tree" model="ir.ui.view">
+        <field name="name">afip.contract.type.list</field>
+        <field name="model">afip.contract.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_afip_contract_type" model="ir.actions.act_window">
+        <field name="name">Modalidades de Contratación AFIP</field>
+        <field name="res_model">afip.contract.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Situaciones de Revista -->
+    <record id="view_afip_situation_tree" model="ir.ui.view">
+        <field name="name">afip.situation.list</field>
+        <field name="model">afip.situation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_afip_situation" model="ir.actions.act_window">
+        <field name="name">Situaciones de Revista AFIP</field>
+        <field name="res_model">afip.situation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

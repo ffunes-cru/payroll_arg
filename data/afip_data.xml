@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Modalidades de Contratación AFIP -->
+        <record id="afip_contract_type_001" model="afip.contract.type">
+            <field name="code">001</field>
+            <field name="name">A tiempo indeterminado / Trabajo permanente</field>
+        </record>
+        <record id="afip_contract_type_049" model="afip.contract.type">
+            <field name="code">049</field>
+            <field name="name">A tiempo parcial (Jornada reducida)</field>
+        </record>
+        <record id="afip_contract_type_021" model="afip.contract.type">
+            <field name="code">021</field>
+            <field name="name">Trabajo eventual / Temporario</field>
+        </record>
+        <record id="afip_contract_type_022" model="afip.contract.type">
+            <field name="code">022</field>
+            <field name="name">A plazo fijo</field>
+        </record>
+
+        <!-- Situaciones de Revista AFIP -->
+        <record id="afip_situation_01" model="afip.situation">
+            <field name="code">01</field>
+            <field name="name">Activo</field>
+        </record>
+        <record id="afip_situation_12" model="afip.situation">
+            <field name="code">12</field>
+            <field name="name">Licencia por Vacaciones</field>
+        </record>
+        <record id="afip_situation_05" model="afip.situation">
+            <field name="code">05</field>
+            <field name="name">Licencia por Enfermedad Inculpable</field>
+        </record>
+        <record id="afip_situation_06" model="afip.situation">
+            <field name="code">06</field>
+            <field name="name">Licencia por Maternidad</field>
+        </record>
+        <record id="afip_situation_10" model="afip.situation">
+            <field name="code">10</field>
+            <field name="name">Suspensión</field>
+        </record>
+
+        <!-- Condiciones AFIP -->
+        <record id="afip_condition_01" model="afip.condition">
+            <field name="code">01</field>
+            <field name="name">Servicios comunes mayor de 18 años</field>
+        </record>
+        <record id="afip_condition_02" model="afip.condition">
+            <field name="code">02</field>
+            <field name="name">Jubilado</field>
+        </record>
+
+        <!-- Actividades AFIP -->
+        <record id="afip_activity_049" model="afip.activity">
+            <field name="code">049</field>
+            <field name="name">Comercio</field>
+        </record>
+        <record id="afip_activity_021" model="afip.activity">
+            <field name="code">021</field>
+            <field name="name">Construcción</field>
+        </record>
+        <record id="afip_activity_001" model="afip.activity">
+            <field name="code">001</field>
+            <field name="name">Industria Manufacturera</field>
+        </record>
+
+        <!-- Zonas Geográficas AFIP -->
+        <record id="afip_zone_18" model="afip.zone">
+            <field name="code">18</field>
+            <field name="name">Córdoba</field>
+        </record>
+        <record id="afip_zone_01" model="afip.zone">
+            <field name="code">01</field>
+            <field name="name">Ciudad Autónoma de Buenos Aires</field>
+        </record>
+        <record id="afip_zone_02" model="afip.zone">
+            <field name="code">02</field>
+            <field name="name">Buenos Aires (Resto)</field>
+        </record>
+
+        <!-- Siniestrado AFIP -->
+        <record id="afip_siniestrado_00" model="afip.siniestrado">
+            <field name="code">00</field>
+            <field name="name">No siniestrado</field>
+        </record>
+
+        <!-- Obras Sociales RNOS -->
+        <record id="afip_os_osde" model="afip.health.insurance">
+            <field name="code">126205</field>
+            <field name="name">OSDE Organización de Servicios Directos Empresarios</field>
+            <field name="initials">OSDE</field>
+        </record>
+        <record id="afip_os_osecac" model="afip.health.insurance">
+            <field name="code">126304</field>
+            <field name="name">O.S. de los Empleados de Comercio y Actividades Civiles</field>
+            <field name="initials">OSECAC</field>
+        </record>
+        <record id="afip_os_ospecon" model="afip.health.insurance">
+            <field name="code">112103</field>
+            <field name="name">O.S. del Personal de la Construcción</field>
+            <field name="initials">OSPECON</field>
+        </record>
+        <record id="afip_os_osuomra" model="afip.health.insurance">
+            <field name="code">112800</field>
+            <field name="name">O.S. de la Unión Obrera Metalúrgica</field>
+            <field name="initials">OSUOMRA</field>
+        </record>
+
+        <!-- Convenios Colectivos -->
+        <record id="afip_cct_uocra" model="afip.cct">
+            <field name="code">76/75</field>
+            <field name="name">UOCRA Construcción (CCT 76/75)</field>
+            <field name="union_rate">2.5</field>
+        </record>
+        <record id="afip_cct_uom" model="afip.cct">
+            <field name="code">260/75</field>
+            <field name="name">UOM Metalúrgicos (CCT 260/75)</field>
+            <field name="union_rate">2.5</field>
+        </record>
+        <record id="afip_cct_comercio" model="afip.cct">
+            <field name="code">130/75</field>
+            <field name="name">Comercio (CCT 130/75)</field>
+            <field name="union_rate">2.0</field>
+        </record>
+
+        <!-- Categorías Laborales UOM (CCT 260/75) - Jornalizados -->
+        <record id="afip_cat_uom_operario" model="afip.labor.category">
+            <field name="code">OP</field>
+            <field name="name">Operario Metalúrgico</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">hourly</field>
+            <field name="hourly_wage">4500.0</field>
+        </record>
+        <record id="afip_cat_uom_medio_oficial" model="afip.labor.category">
+            <field name="code">MO</field>
+            <field name="name">Medio Oficial Metalúrgico</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">hourly</field>
+            <field name="hourly_wage">4900.0</field>
+        </record>
+        <record id="afip_cat_uom_oficial" model="afip.labor.category">
+            <field name="code">OF</field>
+            <field name="name">Oficial Metalúrgico</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">hourly</field>
+            <field name="hourly_wage">5400.0</field>
+        </record>
+        <record id="afip_cat_uom_oficial_multiple" model="afip.labor.category">
+            <field name="code">OM</field>
+            <field name="name">Oficial Múltiple Metalúrgico</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">hourly</field>
+            <field name="hourly_wage">6000.0</field>
+        </record>
+
+        <!-- Categorías Laborales UOM (CCT 260/75) - Mensualizados -->
+        <record id="afip_cat_uom_admin_1" model="afip.labor.category">
+            <field name="code">ADM1</field>
+            <field name="name">Administrativo 1ª - UOM</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">monthly</field>
+            <field name="monthly_wage">850000.0</field>
+        </record>
+        <record id="afip_cat_uom_admin_2" model="afip.labor.category">
+            <field name="code">ADM2</field>
+            <field name="name">Administrativo 2ª - UOM</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">monthly</field>
+            <field name="monthly_wage">950000.0</field>
+        </record>
+        <record id="afip_cat_uom_supervisor" model="afip.labor.category">
+            <field name="code">SUP</field>
+            <field name="name">Personal Técnico / Supervisor - UOM</field>
+            <field name="cct_id" ref="afip_cct_uom"/>
+            <field name="category_type">monthly</field>
+            <field name="monthly_wage">1250000.0</field>
+        </record>
+
+    </data>
+
+    <!-- Datos estables que no deben reinicializarse en actualizaciones posteriores -->
+    <data noupdate="1">
+        <!-- Tipo de Ausencia: Licencia por Vacaciones (LCT) -->
+        <record id="holiday_status_vacaciones_lct" model="hr.leave.type">
+            <field name="name">Licencia por Vacaciones (LCT)</field>
+            <field name="requires_allocation" eval="False"/>
+            <field name="color">3</field>
+            <field name="request_unit">day</field>
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+
+        <!-- Calendarios de Trabajo (Resource Calendars) -->
+        <!-- 1. Jornal Fábrica / Taller (UOM - 44 horas semanales) -->
+        <record id="resource_calendar_jornal_44h" model="resource.calendar">
+            <field name="name">Jornal Fábrica UOM (44 hs/semana)</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="full_time_required_hours">44</field>
+            <field name="hours_per_day">8.8</field>
+        </record>
+
+        <record id="att_jornal_mon_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Lunes Mañana</field>
+            <field name="dayofweek">0</field>
+            <field name="hour_from">8</field>
+            <field name="hour_to">12</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_jornal_mon_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Lunes Tarde</field>
+            <field name="dayofweek">0</field>
+            <field name="hour_from">13</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_jornal_tue_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Martes Mañana</field>
+            <field name="dayofweek">1</field>
+            <field name="hour_from">8</field>
+            <field name="hour_to">12</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_jornal_tue_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Martes Tarde</field>
+            <field name="dayofweek">1</field>
+            <field name="hour_from">13</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_jornal_wed_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Miércoles Mañana</field>
+            <field name="dayofweek">2</field>
+            <field name="hour_from">8</field>
+            <field name="hour_to">12</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_jornal_wed_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Miércoles Tarde</field>
+            <field name="dayofweek">2</field>
+            <field name="hour_from">13</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_jornal_thu_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Jueves Mañana</field>
+            <field name="dayofweek">3</field>
+            <field name="hour_from">8</field>
+            <field name="hour_to">12</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_jornal_thu_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Jueves Tarde</field>
+            <field name="dayofweek">3</field>
+            <field name="hour_from">13</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_jornal_fri_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Viernes Mañana</field>
+            <field name="dayofweek">4</field>
+            <field name="hour_from">8</field>
+            <field name="hour_to">12</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_jornal_fri_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_jornal_44h"/>
+            <field name="name">Viernes Tarde</field>
+            <field name="dayofweek">4</field>
+            <field name="hour_from">13</field>
+            <field name="hour_to">17</field>
+            <field name="day_period">afternoon</field>
+        </record>
+
+        <!-- 2. Mensual / Administración (40 horas semanales) -->
+        <record id="resource_calendar_mensual_40h" model="resource.calendar">
+            <field name="name">Administración / Mensual (40 hs/semana)</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="full_time_required_hours">40</field>
+            <field name="hours_per_day">8.0</field>
+        </record>
+
+        <record id="att_mensual_mon_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Lunes Mañana</field>
+            <field name="dayofweek">0</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">13</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_mensual_mon_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Lunes Tarde</field>
+            <field name="dayofweek">0</field>
+            <field name="hour_from">14</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_mensual_tue_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Martes Mañana</field>
+            <field name="dayofweek">1</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">13</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_mensual_tue_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Martes Tarde</field>
+            <field name="dayofweek">1</field>
+            <field name="hour_from">14</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_mensual_wed_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Miércoles Mañana</field>
+            <field name="dayofweek">2</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">13</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_mensual_wed_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Miércoles Tarde</field>
+            <field name="dayofweek">2</field>
+            <field name="hour_from">14</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_mensual_thu_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Jueves Mañana</field>
+            <field name="dayofweek">3</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">13</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_mensual_thu_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Jueves Tarde</field>
+            <field name="dayofweek">3</field>
+            <field name="hour_from">14</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+        <record id="att_mensual_fri_morn" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Viernes Mañana</field>
+            <field name="dayofweek">4</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">13</field>
+            <field name="day_period">morning</field>
+        </record>
+        <record id="att_mensual_fri_aft" model="resource.calendar.attendance">
+            <field name="calendar_id" ref="resource_calendar_mensual_40h"/>
+            <field name="name">Viernes Tarde</field>
+            <field name="dayofweek">4</field>
+            <field name="hour_from">14</field>
+            <field name="hour_to">18</field>
+            <field name="day_period">afternoon</field>
+        </record>
+    </data>
+</odoo>

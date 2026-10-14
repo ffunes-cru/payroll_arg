@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_payroll_arg_export_wizard_form" model="ir.ui.view">
+        <field name="name">payroll.arg.export.wizard.form</field>
+        <field name="model">payroll.arg.export.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Exportar Reportes Nómina Argentina">
+                <field name="state" invisible="1"/>
+                
+                <div invisible="state != 'choose'">
+                    <p class="text-muted">
+                        Seleccione el formato de reporte legal, bancario o recibo que desea generar a través de la librería certificada para Argentina.
+                    </p>
+                    <group>
+                        <field name="payslip_run_id" readonly="1" invisible="not payslip_run_id"/>
+                        <field name="payslip_id" readonly="1" invisible="not payslip_id"/>
+                        <field name="report_type" widget="radio"/>
+                        <field name="recibo_layout" invisible="report_type != 'recibo_pdf'"/>
+                    </group>
+                </div>
+
+                <div invisible="state != 'get'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>¡Reporte generado con éxito!</strong> Haga clic en el archivo para descargarlo a su equipo.
+                    </div>
+                    <group>
+                        <field name="file_name" invisible="1"/>
+                        <field name="file_data" filename="file_name"/>
+                    </group>
+                </div>
+
+                <footer>
+                    <button
+                        name="action_generate_report"
+                        string="Generar Reporte"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'choose'"
+                    />
+                    <button
+                        string="Cerrar"
+                        class="btn-secondary"
+                        special="cancel"
+                    />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

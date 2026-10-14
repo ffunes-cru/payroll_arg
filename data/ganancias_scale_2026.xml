@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Escala Oficial Ganancias 4ta Categoría 2026 -->
+        <record id="scale_ganancias_2026" model="hr.ganancias.scale">
+            <field name="name">Escala Legal Ganancias 2026 (Art. 94 / 30 LIG)</field>
+            <field name="date_from">2026-01-01</field>
+            <field name="date_to">2026-12-31</field>
+            <field name="active" eval="True"/>
+            <field name="sequence" eval="10"/>
+
+            <!-- Deducciones Personales Anuales Art. 30 -->
+            <field name="deduccion_ganancia_no_imponible">3091035.0</field>
+            <field name="deduccion_especial">14836968.0</field>
+            <field name="deduccion_conyuge">2911135.0</field>
+            <field name="deduccion_hijo">1468096.0</field>
+            <field name="deduccion_hijo_incapacitado">2936192.0</field>
+        </record>
+
+        <!-- Tramos Progresivos Art. 94 -->
+        <record id="scale_line_2026_1" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="1"/>
+            <field name="amount_from">0.0</field>
+            <field name="amount_to">1200000.0</field>
+            <field name="fixed_amount">0.0</field>
+            <field name="rate">5.0</field>
+        </record>
+
+        <record id="scale_line_2026_2" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="2"/>
+            <field name="amount_from">1200000.0</field>
+            <field name="amount_to">2400000.0</field>
+            <field name="fixed_amount">60000.0</field>
+            <field name="rate">9.0</field>
+        </record>
+
+        <record id="scale_line_2026_3" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="3"/>
+            <field name="amount_from">2400000.0</field>
+            <field name="amount_to">3600000.0</field>
+            <field name="fixed_amount">168000.0</field>
+            <field name="rate">12.0</field>
+        </record>
+
+        <record id="scale_line_2026_4" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="4"/>
+            <field name="amount_from">3600000.0</field>
+            <field name="amount_to">4800000.0</field>
+            <field name="fixed_amount">312000.0</field>
+            <field name="rate">15.0</field>
+        </record>
+
+        <record id="scale_line_2026_5" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="5"/>
+            <field name="amount_from">4800000.0</field>
+            <field name="amount_to">7200000.0</field>
+            <field name="fixed_amount">492000.0</field>
+            <field name="rate">19.0</field>
+        </record>
+
+        <record id="scale_line_2026_6" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="6"/>
+            <field name="amount_from">7200000.0</field>
+            <field name="amount_to">10800000.0</field>
+            <field name="fixed_amount">948000.0</field>
+            <field name="rate">23.0</field>
+        </record>
+
+        <record id="scale_line_2026_7" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="7"/>
+            <field name="amount_from">10800000.0</field>
+            <field name="amount_to">16200000.0</field>
+            <field name="fixed_amount">1776000.0</field>
+            <field name="rate">27.0</field>
+        </record>
+
+        <record id="scale_line_2026_8" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="8"/>
+            <field name="amount_from">16200000.0</field>
+            <field name="amount_to">24300000.0</field>
+            <field name="fixed_amount">3234000.0</field>
+            <field name="rate">31.0</field>
+        </record>
+
+        <record id="scale_line_2026_9" model="hr.ganancias.scale.line">
+            <field name="scale_id" ref="scale_ganancias_2026"/>
+            <field name="sequence" eval="9"/>
+            <field name="amount_from">24300000.0</field>
+            <field name="amount_to">0.0</field>
+            <field name="fixed_amount">5745000.0</field>
+            <field name="rate">35.0</field>
+        </record>
+    </data>
+</odoo>

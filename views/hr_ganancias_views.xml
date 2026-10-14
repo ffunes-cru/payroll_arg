@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================================== -->
+    <!-- ESCALA ART. 94 - TREE Y FORM                             -->
+    <!-- ======================================================== -->
+    <record id="view_hr_ganancias_scale_tree" model="ir.ui.view">
+        <field name="name">hr.ganancias.scale.tree</field>
+        <field name="model">hr.ganancias.scale</field>
+        <field name="arch" type="xml">
+            <list string="Escalas de Ganancias 4ta Categoría">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="deduccion_ganancia_no_imponible"/>
+                <field name="deduccion_especial"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_ganancias_scale_form" model="ir.ui.view">
+        <field name="name">hr.ganancias.scale.form</field>
+        <field name="model">hr.ganancias.scale</field>
+        <field name="arch" type="xml">
+            <form string="Escala Progresiva Ganancias Art. 94">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Período / Denominación"/>
+                        <h1>
+                            <field name="name" placeholder="Ej: 2do Semestre 2026"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Vigencia">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group string="Deducciones Personales Anuales (Art. 30 LIG)">
+                            <field name="deduccion_ganancia_no_imponible"/>
+                            <field name="deduccion_especial"/>
+                            <field name="deduccion_conyuge"/>
+                            <field name="deduccion_hijo"/>
+                            <field name="deduccion_hijo_incapacitado"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Tramos de la Escala Progresiva (Art. 94)">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="amount_from"/>
+                                    <field name="amount_to"/>
+                                    <field name="fixed_amount"/>
+                                    <field name="rate"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_ganancias_scale" model="ir.actions.act_window">
+        <field name="name">Escalas y Deducciones Ganancias</field>
+        <field name="res_model">hr.ganancias.scale</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Cree una nueva escala semestral de Ganancias Art. 94 y deducciones Art. 30.
+            </p>
+        </field>
+    </record>
+
+    <!-- ======================================================== -->
+    <!-- ACUMULADOR MENSUAL DE GANANCIAS POR EMPLEADO             -->
+    <!-- ======================================================== -->
+    <record id="view_hr_ganancias_accumulator_tree" model="ir.ui.view">
+        <field name="name">hr.ganancias.accumulator.tree</field>
+        <field name="model">hr.ganancias.accumulator</field>
+        <field name="arch" type="xml">
+            <list string="Acumuladores Mensuales Ganancias" create="1" edit="1">
+                <field name="employee_id"/>
+                <field name="year"/>
+                <field name="month"/>
+                <field name="gross_rem"/>
+                <field name="accumulated_gross"/>
+                <field name="accumulated_net_taxable"/>
+                <field name="retention_calculated" decoration-info="retention_calculated &gt; 0"/>
+                <field name="retention_applied" decoration-bf="1" decoration-success="retention_applied &gt; 0"/>
+                <field name="payslip_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_ganancias_accumulator_form" model="ir.ui.view">
+        <field name="name">hr.ganancias.accumulator.form</field>
+        <field name="model">hr.ganancias.accumulator</field>
+        <field name="arch" type="xml">
+            <form string="Acumulador Mensual de Ganancias">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="display_name" string="Acumulador"/>
+                        <h1>
+                            <field name="display_name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identificación y Período">
+                            <field name="employee_id"/>
+                            <field name="year"/>
+                            <field name="month"/>
+                            <field name="payslip_id"/>
+                        </group>
+                        <group string="Valores del Mes">
+                            <field name="gross_rem"/>
+                            <field name="deductions_employee"/>
+                            <field name="other_deductions"/>
+                        </group>
+                    </group>
+                    <group string="Valores Acumulados Anuales (Enero a este Mes)">
+                        <group>
+                            <field name="accumulated_gross"/>
+                            <field name="accumulated_deductions"/>
+                            <field name="personal_deductions"/>
+                            <field name="accumulated_net_taxable"/>
+                        </group>
+                        <group string="Determinación de Retención">
+                            <field name="accumulated_tax"/>
+                            <field name="accumulated_retained"/>
+                            <field name="retention_calculated"/>
+                            <field name="retention_applied"/>
+                        </group>
+                    </group>
+                    <group string="Notas / Observaciones">
+                        <field name="notes" placeholder="Notas sobre cargas retroactivas o ajustes manuales..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_ganancias_accumulator_search" model="ir.ui.view">
+        <field name="name">hr.ganancias.accumulator.search</field>
+        <field name="model">hr.ganancias.accumulator</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Acumuladores">
+                <field name="employee_id"/>
+                <field name="year"/>
+                <field name="month"/>
+                <filter string="Con Retención" name="with_retention" domain="[('retention_applied', '&gt;', 0)]"/>
+                <group>
+                    <filter string="Empleado" name="group_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Año Fiscal" name="group_year" context="{'group_by': 'year'}"/>
+                    <filter string="Mes" name="group_month" context="{'group_by': 'month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_ganancias_accumulator" model="ir.actions.act_window">
+        <field name="name">Acumuladores Anuales Ganancias</field>
+        <field name="res_model">hr.ganancias.accumulator</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_hr_ganancias_accumulator_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Historial mensual acumulativo de Ganancias por empleado.
+            </p>
+        </field>
+    </record>
+</odoo>

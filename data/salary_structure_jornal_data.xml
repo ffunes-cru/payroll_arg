@@ -1,0 +1,1358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- ======================================================== -->
+        <!-- CATEGORÍAS DE REGLAS SALARIALES ARGENTINAS               -->
+        <!-- ======================================================== -->
+        <record id="cat_rem" model="hr.salary.rule.category">
+            <field name="name">Remunerativo (Haberes con Aporte)</field>
+            <field name="code">REM</field>
+        </record>
+        <record id="cat_norem" model="hr.salary.rule.category">
+            <field name="name">No Remunerativo (Haberes sin Aporte)</field>
+            <field name="code">NOREM</field>
+        </record>
+        <record id="cat_ret" model="hr.salary.rule.category">
+            <field name="name">Retenciones y Descuentos de Ley</field>
+            <field name="code">DED</field>
+        </record>
+        <record id="cat_gross" model="hr.salary.rule.category">
+            <field name="name">Total Bruto</field>
+            <field name="code">GROSS</field>
+        </record>
+        <record id="cat_net" model="hr.salary.rule.category">
+            <field name="name">Neto a Cobrar</field>
+            <field name="code">NET</field>
+        </record>
+        <record id="cat_comp" model="hr.salary.rule.category">
+            <field name="name">Contribuciones Patronales</field>
+            <field name="code">COMP</field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- REGLAS JORNALES QUINCENALES                              -->
+        <!-- ======================================================== -->
+        <!-- Regla: Básico Jornal (Horas Normales) -->
+        <record id="rule_jornal_basico" model="hr.salary.rule">
+            <field name="name">Básico Horas Trabajadas</field>
+            <field name="sequence" eval="10"/>
+            <field name="code">BASIC_HORAS</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">110000</field>
+            <field name="afip_unit">H</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# Cascada: payslip.hours_normal → inputs.HS_NORM → worked_days.WORK100
+# SIN fallbacks inventados — si no hay dato, se liquida 0 horas
+hs = 0.0
+if payslip.hours_normal > 0:
+    hs = payslip.hours_normal
+elif inputs.HS_NORM and inputs.HS_NORM.amount > 0:
+    hs = inputs.HS_NORM.amount
+elif worked_days.WORK100 and worked_days.WORK100.number_of_hours > 0:
+    hs = worked_days.WORK100.number_of_hours
+
+# Valor hora: contrato → categoría laboral. Sin fallback inventado.
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+result_qty = hs
+result = wage
+            </field>
+        </record>
+
+        <!-- Regla: Feriados Nacionales y Días No Laborables -->
+        <record id="rule_jornal_feriado" model="hr.salary.rule">
+            <field name="name">Feriados</field>
+            <field name="sequence" eval="12"/>
+            <field name="code">FERIADO</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">130000</field>
+            <field name="afip_unit">H</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+horas = inputs.FERIADO.amount if (inputs.FERIADO and inputs.FERIADO.amount > 0) else (payslip.cant_feriados or 0.0)
+result = horas > 0
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+horas = inputs.FERIADO.amount if (inputs.FERIADO and inputs.FERIADO.amount > 0) else (payslip.cant_feriados or 0.0)
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+result_qty = horas
+result = round(wage, 2)
+            </field>
+        </record>
+
+        <!-- Regla: Objetivos -->
+        <record id="rule_jornal_objetivos" model="hr.salary.rule">
+            <field name="name">Objetivos</field>
+            <field name="sequence" eval="25"/>
+            <field name="code">OBJETIVOS</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">0</field>
+            <field name="afip_unit">H</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.OBJETIVOS and inputs.OBJETIVOS.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+obj_ammount = inputs.OBJETIVOS.amount if (inputs.OBJETIVOS and inputs.OBJETIVOS.amount > 0) else 0.0
+result_qty = 1
+result = obj_ammount
+            </field>
+        </record>
+
+        <!-- Regla: Premio Producción -->
+        <record id="rule_jornal_premio_produccion" model="hr.salary.rule">
+            <field name="name">Premio Producción</field>
+            <field name="sequence" eval="26"/>
+            <field name="code">PREMIO_PROD</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">0</field>
+            <field name="afip_unit">U</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.PREMIO_PROD and inputs.PREMIO_PROD.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+premio_amount = inputs.PREMIO_PROD.amount if (inputs.PREMIO_PROD and inputs.PREMIO_PROD.amount > 0) else 0.0
+result_qty = 1
+result = premio_amount
+            </field>
+        </record>
+
+        <!-- Regla: Presentismo -->
+        <record id="rule_jornal_presentismo" model="hr.salary.rule">
+            <field name="name">Presentismo</field>
+            <field name="sequence" eval="27"/>
+            <field name="code">PRESENTISMO</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">0</field>
+            <field name="afip_unit">U</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.PRESENTISMO and inputs.PRESENTISMO.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+pres_amount = inputs.PRESENTISMO.amount if (inputs.PRESENTISMO and inputs.PRESENTISMO.amount > 0) else 0.0
+result_qty = 1
+result = pres_amount
+            </field>
+        </record>
+
+        <!-- Regla: Portítulo -->
+        <record id="rule_jornal_portitulo" model="hr.salary.rule">
+            <field name="name">Portítulo</field>
+            <field name="sequence" eval="28"/>
+            <field name="code">PORTITULO</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">0</field>
+            <field name="afip_unit">U</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.PORTITULO and inputs.PORTITULO.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+portitulo_amount = inputs.PORTITULO.amount if (inputs.PORTITULO and inputs.PORTITULO.amount > 0) else 0.0
+result_qty = 1
+result = portitulo_amount
+            </field>
+        </record>
+
+        <!-- Regla: Horas Extras al 50% -->
+        <record id="rule_jornal_hs_ext50" model="hr.salary.rule">
+            <field name="name">Horas Extras 50%</field>
+            <field name="sequence" eval="20"/>
+            <field name="code">HS_EXT_50</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">130000</field>
+            <field name="afip_unit">H</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool((inputs.HS_EXT50 and inputs.HS_EXT50.amount > 0) or (payslip.hours_ext50 > 0))
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+hs_ext = payslip.hours_ext50 if payslip.hours_ext50 > 0 else (inputs.HS_EXT50.amount if (inputs.HS_EXT50 and inputs.HS_EXT50.amount > 0) else 0.0)
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+result_qty = hs_ext
+result = wage * 1.5
+            </field>
+        </record>
+
+        <!-- Regla: Horas Extras al 100% -->
+        <record id="rule_jornal_hs_ext100" model="hr.salary.rule">
+            <field name="name">Horas Extras 100%</field>
+            <field name="sequence" eval="30"/>
+            <field name="code">HS_EXT_100</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">130001</field>
+            <field name="afip_unit">H</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool((inputs.HS_EXT100 and inputs.HS_EXT100.amount > 0) or (payslip.hours_ext100 > 0))
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+hs_ext = payslip.hours_ext100 if payslip.hours_ext100 > 0 else (inputs.HS_EXT100.amount if (inputs.HS_EXT100 and inputs.HS_EXT100.amount > 0) else 0.0)
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+result_qty = hs_ext
+result = wage * 2.0
+            </field>
+        </record>
+
+        <!-- Regla: Vacaciones Jornal (Art. 155 LCT) -->
+        <record id="rule_jornal_vacaciones" model="hr.salary.rule">
+            <field name="name">Adelanto Vacaciones</field>
+            <field name="sequence" eval="40"/>
+            <field name="code">VACACIONES</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">150000</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool((inputs.VAC_DIAS and inputs.VAC_DIAS.amount > 0) or (payslip.total_days_vacation > 0) or (worked_days.VAC and worked_days.VAC.number_of_days > 0))
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# Vacaciones Jornal — Art. 155 LCT
+# Fórmula: valor_hora × horas_diarias × plus_vacacional_20% × días
+dias_vac = 0.0
+if inputs.VAC_DIAS and inputs.VAC_DIAS.amount > 0:
+    dias_vac = inputs.VAC_DIAS.amount
+elif payslip.total_days_vacation > 0:
+    dias_vac = payslip.total_days_vacation
+elif worked_days.VAC and worked_days.VAC.number_of_days > 0:
+    dias_vac = worked_days.VAC.number_of_days
+
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+
+# Horas diarias del calendario (NO hardcodeado)
+hours_per_day = contract.resource_calendar_id.hours_per_day if contract.resource_calendar_id else 8.0
+# Plus vacacional Art. 155 LCT: 20% sobre salario habitual
+PLUS_VACACIONAL = 1.20
+result_qty = dias_vac
+result = wage * hours_per_day * PLUS_VACACIONAL
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- REGLAS EMPLEADOS MENSUALIZADOS                           -->
+        <!-- ======================================================== -->
+        <!-- Regla: Sueldo Básico Mensual -->
+        <record id="rule_mensual_basico" model="hr.salary.rule">
+            <field name="name">Sueldo Básico Mensual</field>
+            <field name="sequence" eval="10"/>
+            <field name="code">BASIC_MENSUAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">110000</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# Sueldo Básico Mensual — Base legal 30 días (LCT)
+DIAS_BASE = 30.0
+dias_vac = 0.0
+if inputs.VAC_DIAS and inputs.VAC_DIAS.amount > 0:
+    dias_vac = inputs.VAC_DIAS.amount
+elif payslip.total_days_vacation > 0:
+    dias_vac = payslip.total_days_vacation
+elif worked_days.VAC and worked_days.VAC.number_of_days > 0:
+    dias_vac = worked_days.VAC.number_of_days
+
+if payslip.total_days_worked > 0 and dias_vac == 0:
+    dias_trab = min(DIAS_BASE, payslip.total_days_worked)
+else:
+    dias_trab = max(0.0, DIAS_BASE - dias_vac)
+
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.monthly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene sueldo básico configurado.")
+result_qty = dias_trab
+result = wage / DIAS_BASE
+            </field>
+        </record>
+
+        <!-- Regla: Vacaciones Mensual (Art. 155 LCT - Divisor 25) -->
+        <record id="rule_mensual_vacaciones" model="hr.salary.rule">
+            <field name="name">Licencia por Vacaciones</field>
+            <field name="sequence" eval="15"/>
+            <field name="code">VACACIONES_MENSUAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">150000</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool((inputs.VAC_DIAS and inputs.VAC_DIAS.amount > 0) or (payslip.total_days_vacation > 0) or (worked_days.VAC and worked_days.VAC.number_of_days > 0))
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# Vacaciones Mensual — Art. 155 LCT (divisor configurable por CCT, default 25)
+dias_vac = 0.0
+if inputs.VAC_DIAS and inputs.VAC_DIAS.amount > 0:
+    dias_vac = inputs.VAC_DIAS.amount
+elif payslip.total_days_vacation > 0:
+    dias_vac = payslip.total_days_vacation
+elif worked_days.VAC and worked_days.VAC.number_of_days > 0:
+    dias_vac = worked_days.VAC.number_of_days
+
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.monthly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene sueldo básico configurado.")
+
+# Divisor vacaciones: desde CCT (configurable) o default legal 25
+divisor = 25.0
+if employee.cct_id and employee.cct_id.vacation_divisor:
+    divisor = employee.cct_id.vacation_divisor
+result_qty = dias_vac
+result = wage / divisor
+            </field>
+        </record>
+
+        <!-- Regla: Adicional Antigüedad (1% anual CCT) -->
+        <record id="rule_mensual_antiguedad" model="hr.salary.rule">
+            <field name="name">Adicional Antigüedad</field>
+            <field name="sequence" eval="20"/>
+            <field name="code">ADIC_ANTIG</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">120000</field>
+            <field name="afip_unit">%</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = payslip.antiguedad_anios > 0 and bool(contract.is_convencionado)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result_rate = payslip.antiguedad_anios * 1.0
+result = categories.REM
+            </field>
+        </record>
+
+        <!-- Regla: Asignación No Remunerativa (Acuerdo UOM / Sumas No Remunerativas) -->
+        <record id="rule_jornal_norem_uom" model="hr.salary.rule">
+            <field name="name">Asignación No Remunerativa (UOM)</field>
+            <field name="sequence" eval="40"/>
+            <field name="code">ASIG_NO_REM</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">550000</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.ASIG_NO_REM and inputs.ASIG_NO_REM.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.ASIG_NO_REM.amount if (inputs.ASIG_NO_REM and inputs.ASIG_NO_REM.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- Regla: Gratificación Extraordinaria No Remunerativa -->
+        <record id="rule_jornal_gratif_no_rem" model="hr.salary.rule">
+            <field name="name">Gratif. Extraordinaria No Rem.</field>
+            <field name="sequence" eval="41"/>
+            <field name="code">GRATIF_NO_REM</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">550000</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.GRATIF_NO_REM and inputs.GRATIF_NO_REM.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.GRATIF_NO_REM.amount if (inputs.GRATIF_NO_REM and inputs.GRATIF_NO_REM.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- Regla: Compensación Extraordinaria No Remunerativa -->
+        <record id="rule_jornal_compens_no_rem" model="hr.salary.rule">
+            <field name="name">Compens. Extraord. NR</field>
+            <field name="sequence" eval="42"/>
+            <field name="code">COMPENS_NO_REM</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">550000</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.COMPENS_NO_REM and inputs.COMPENS_NO_REM.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.COMPENS_NO_REM.amount if (inputs.COMPENS_NO_REM and inputs.COMPENS_NO_REM.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- REGLAS COMUNES: BRUTO, RETENCIONES Y NETO                -->
+        <!-- ======================================================== -->
+        <!-- Regla: Total Bruto Remunerativo -->
+        <record id="rule_jornal_gross" model="hr.salary.rule">
+            <field name="name">Total Bruto Remunerativo</field>
+            <field name="sequence" eval="100"/>
+            <field name="code">GROSS</field>
+            <field name="category_id" ref="cat_gross"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = categories.REM
+            </field>
+        </record>
+
+        <!-- Regla: Retención Jubilación 11% (con Tope Imponible) -->
+        <record id="rule_jornal_jubilacion" model="hr.salary.rule">
+            <field name="name">Jubilación (SIPA 11%)</field>
+            <field name="sequence" eval="110"/>
+            <field name="code">RET_JUB</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">810001</field>
+            <field name="afip_unit">%</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+tope = payslip.snapshot_tope_imponible
+base = min(categories.REM, tope) if (tope and tope > 0) else categories.REM
+rate = payslip.company_id.jubilacion_contrib_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Jubilación Trabajador en la compañía " + str(payslip.company_id.name or ''))
+result_qty = 1.0
+result_rate = rate
+result = - base
+            </field>
+        </record>
+
+        <!-- Regla: Retención Ley 19.032 (3%) (con Tope Imponible) -->
+        <record id="rule_jornal_inssjp" model="hr.salary.rule">
+            <field name="name">Ley 19.032 (INSSJyP 3%)</field>
+            <field name="sequence" eval="120"/>
+            <field name="code">RET_INSSJP</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">810002</field>
+            <field name="afip_unit">%</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+tope = payslip.snapshot_tope_imponible
+base = min(categories.REM, tope) if (tope and tope > 0) else categories.REM
+rate = payslip.company_id.inssjp_contrib_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de INSSJyP Trabajador en la compañía " + str(payslip.company_id.name or ''))
+result_qty = 1.0
+result_rate = rate
+result = - base
+            </field>
+        </record>
+
+        <!-- Regla: Retención Obra Social (3%) (con Tope Imponible) -->
+        <record id="rule_jornal_obra_social" model="hr.salary.rule">
+            <field name="name">Obra Social (3%)</field>
+            <field name="sequence" eval="130"/>
+            <field name="code">RET_OS</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">810003</field>
+            <field name="afip_unit">%</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+tope = payslip.snapshot_tope_imponible
+base_rem = min(categories.REM, tope) if (tope and tope > 0) else categories.REM
+base = base_rem + categories.NOREM
+rate = payslip.company_id.os_worker_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Obra Social Trabajador en la compañía " + str(payslip.company_id.name or ''))
+result_qty = 1.0
+result_rate = rate
+result = - base
+            </field>
+        </record>
+
+        <!-- Regla: Cuota Sindical -->
+        <record id="rule_jornal_sindicato" model="hr.salary.rule">
+            <field name="name">Cuota Sindical</field>
+            <field name="sequence" eval="140"/>
+            <field name="code">RET_SIND</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">820001</field>
+            <field name="afip_unit">%</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(contract.is_convencionado)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+cct = contract.employee_id.cct_id if (contract and contract.is_convencionado) else False
+rate = cct.union_rate if (cct and cct.union_rate) else getattr(payslip.company_id, "union_rate", 0.0)
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Cuota Sindical en el convenio o compañía para " + str(payslip.name or payslip.id))
+result_qty = 1.0
+result_rate = rate
+result = - (categories.REM + categories.NOREM)
+            </field>
+        </record>
+
+        <!-- Regla: Retención Impuesto a las Ganancias 4ta Categoría -->
+        <record id="rule_jornal_ganancias" model="hr.salary.rule">
+            <field name="name">Retención Ganancias (4ta Cat.)</field>
+            <field name="sequence" eval="150"/>
+            <field name="code">RET_GANANCIAS</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">810004</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+ret_val = payslip._calculate_ganancias_from_rules(categories.REM, categories.RET)
+result_qty = 1.0
+result = - abs(round(ret_val, 2)) if ret_val > 0 else 0.0
+            </field>
+        </record>
+
+        <!-- Regla: Aporte Adicional Seg. Social (Descuento 2da Quincena configurado en el Empleado) -->
+        <record id="rule_jornal_aporte_adic_ss" model="hr.salary.rule">
+            <field name="name">Aporte Adicional Seg. Social</field>
+            <field name="sequence" eval="160"/>
+            <field name="code">APORTE_ADIC_SS</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">810005</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+is_q2 = (payslip.tipo_liquidacion == '2° Quincena') or (payslip.payslip_run_id and payslip.payslip_run_id.tipo_liquidacion == '2° Quincena')
+monto = inputs.APORTE_ADIC_SS.amount if (inputs.APORTE_ADIC_SS and inputs.APORTE_ADIC_SS.amount > 0) else (employee.aporte_adicional_ss_monto or 0.0)
+result = bool(is_q2 and monto > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+monto = inputs.APORTE_ADIC_SS.amount if (inputs.APORTE_ADIC_SS and inputs.APORTE_ADIC_SS.amount > 0) else (employee.aporte_adicional_ss_monto or 0.0)
+result_qty = 1.0
+result = - abs(round(monto, 2))
+            </field>
+        </record>
+
+        <!-- Regla: Descuento de Viandas (Precio de Quincena × Cantidad de Viandas) -->
+        <record id="rule_jornal_descuento_viandas" model="hr.salary.rule">
+            <field name="name">Descuento Viandas</field>
+            <field name="sequence" eval="170"/>
+            <field name="code">DESC_VIANDAS</field>
+            <field name="category_id" ref="cat_ret"/>
+            <field name="tipo_concepto">3</field>
+            <field name="afip_code">990000</field>
+            <field name="afip_unit">U</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+cant = inputs.DESC_VIANDAS.amount if (inputs.DESC_VIANDAS and inputs.DESC_VIANDAS.amount > 0) else (payslip.cant_viandas or 0.0)
+precio = payslip.precio_vianda or (payslip.payslip_run_id and payslip.payslip_run_id.precio_vianda) or 0.0
+result = bool(cant > 0 and precio > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+cant = inputs.DESC_VIANDAS.amount if (inputs.DESC_VIANDAS and inputs.DESC_VIANDAS.amount > 0) else (payslip.cant_viandas or 0.0)
+precio = payslip.precio_vianda or (payslip.payslip_run_id and payslip.payslip_run_id.precio_vianda) or 0.0
+result_qty = cant
+result = - round(precio, 2)
+            </field>
+        </record>
+
+        <!-- Regla: Neto a Cobrar -->
+        <record id="rule_jornal_neto" model="hr.salary.rule">
+            <field name="name">Sueldo Neto a Cobrar</field>
+            <field name="sequence" eval="200"/>
+            <field name="code">NET</field>
+            <field name="category_id" ref="cat_net"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = categories.REM + categories.NOREM + categories.DED
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- CONTRIBUCIONES PATRONALES (DESGLOSADAS CCT UOM / AFIP)   -->
+        <!-- Se calculan únicamente en 2° Quincena y liquidaciones    -->
+        <!-- mensuales. En 1° Quincena no aplican contribuciones.     -->
+        <!-- ======================================================== -->
+        <!-- Regla Deprecada para compatibilidad con líneas de recibos históricos existentes -->
+        <record id="rule_jornal_contribuciones" model="hr.salary.rule">
+            <field name="name">Contribuciones Patronales Seg. Social (Deprecada)</field>
+            <field name="sequence" eval="999"/>
+            <field name="code">COMP_PATRONAL_OLD</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="active" eval="False"/>
+            <field name="condition_select">none</field>
+            <field name="amount_select">fix</field>
+            <field name="amount_fix">0.0</field>
+        </record>
+
+        <!-- 1. Contribución ART (Variable según póliza ART) -->
+        <record id="rule_jornal_contribuciones_art" model="hr.salary.rule">
+            <field name="name">Contribución ART</field>
+            <field name="sequence" eval="300"/>
+            <field name="code">COMP_ART</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+rate = payslip.company_id.art_variable_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota ART en la compañía " + str(payslip.company_id.name or ''))
+result_qty = 1.0
+result_rate = rate
+result = base
+            </field>
+        </record>
+
+        <!-- 2. Contribución Jubilación (SIPA sobre Base con Detracción Ley 27.541) -->
+        <record id="rule_jornal_contrib_jub" model="hr.salary.rule">
+            <field name="name">Contribución Jubilación</field>
+            <field name="sequence" eval="310"/>
+            <field name="code">COMP_JUB</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base_gen = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+detraccion = payslip.snapshot_detraccion_sipa
+rate = payslip.company_id.jubilacion_patronal_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Jubilación Patronal en la compañía " + str(payslip.company_id.name or ''))
+base_sipa = max(0.0, base_gen - (detraccion or 0.0))
+if payslip.coef_contrib_ss &lt;= 0:
+    raise ValueError("Coeficiente de Contribuciones Seg. Social inválido en el recibo " + str(payslip.number or payslip.name or ''))
+result_qty = payslip.coef_contrib_ss
+result_rate = rate
+result = base_sipa
+            </field>
+        </record>
+
+        <!-- 3. Contribución Obra Social (Régimen de Obras Sociales Ley 23.660) -->
+        <record id="rule_jornal_contribuciones_os" model="hr.salary.rule">
+            <field name="name">Contribución Obra Social</field>
+            <field name="sequence" eval="320"/>
+            <field name="code">COMP_OS</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+rate = payslip.company_id.os_patronal_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Obra Social Patronal en la compañía " + str(payslip.company_id.name or ''))
+if payslip.coef_contrib_os &lt;= 0:
+    raise ValueError("Coeficiente de Contribución Obra Social inválido en el recibo " + str(payslip.number or payslip.name or ''))
+result_qty = payslip.coef_contrib_os
+result_rate = rate
+result = base
+            </field>
+        </record>
+
+        <!-- 4. Contribución Asignaciones Familiares AAFF -->
+        <record id="rule_jornal_contrib_aaff" model="hr.salary.rule">
+            <field name="name">Contribución AAFF</field>
+            <field name="sequence" eval="330"/>
+            <field name="code">COMP_AAFF</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+rate = payslip.company_id.aaff_patronal_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Asignaciones Familiares Patronal en la compañía " + str(payslip.company_id.name or ''))
+if payslip.coef_contrib_ss &lt;= 0:
+    raise ValueError("Coeficiente de Contribuciones Seg. Social inválido en el recibo " + str(payslip.number or payslip.name or ''))
+result_qty = payslip.coef_contrib_ss
+result_rate = rate
+result = base
+            </field>
+        </record>
+
+        <!-- 5. Contribución Fondo Nacional de Empleo FNE -->
+        <record id="rule_jornal_contrib_fne" model="hr.salary.rule">
+            <field name="name">Contribución FNE</field>
+            <field name="sequence" eval="340"/>
+            <field name="code">COMP_FNE</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+rate = payslip.company_id.fne_patronal_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de Fondo Nacional de Empleo FNE en la compañía " + str(payslip.company_id.name or ''))
+if payslip.coef_contrib_ss &lt;= 0:
+    raise ValueError("Coeficiente de Contribuciones Seg. Social inválido en el recibo " + str(payslip.number or payslip.name or ''))
+result_qty = payslip.coef_contrib_ss
+result_rate = rate
+result = base
+            </field>
+        </record>
+
+        <!-- 6. Contribución Ley 19.032 INSSJyP (PAMI sobre Base SIPA con Detracción) -->
+        <record id="rule_jornal_contrib_inssjp" model="hr.salary.rule">
+            <field name="name">Contribución Ley 19032</field>
+            <field name="sequence" eval="350"/>
+            <field name="code">COMP_INSSJP</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+base_gen = payslip.prev_month_gross_arca if (contract.wage_type == 'hourly' and payslip.prev_month_gross_arca > 0) else categories.REM
+detraccion = payslip.snapshot_detraccion_sipa
+rate = payslip.company_id.inssjp_patronal_rate
+if not rate:
+    raise ValueError("Falta configurar la alícuota de INSSJyP Patronal en la compañía " + str(payslip.company_id.name or ''))
+base_sipa = max(0.0, base_gen - (detraccion or 0.0))
+if payslip.coef_contrib_ss &lt;= 0:
+    raise ValueError("Coeficiente de Contribuciones Seg. Social inválido en el recibo " + str(payslip.number or payslip.name or ''))
+result_qty = payslip.coef_contrib_ss
+result_rate = rate
+result = base_sipa
+            </field>
+        </record>
+
+        <!-- 7. Contribución SCVO Seguro Colectivo de Vida Obligatorio -->
+        <record id="rule_jornal_contrib_scvo" model="hr.salary.rule">
+            <field name="name">Contribución SCVO Seg de vida</field>
+            <field name="sequence" eval="360"/>
+            <field name="code">COMP_SCVO</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+fee = payslip.company_id.life_insurance_fee
+if not fee:
+    raise ValueError("Falta configurar el Seguro Colectivo de Vida Obligatorio SCVO en la compañía " + str(payslip.company_id.name or ''))
+result_qty = 1.0
+result = fee
+            </field>
+        </record>
+
+        <!-- 8. Contribución Seguro de Vida y Sepelio CCT UOM (Costo derivado del CCT) -->
+        <record id="rule_jornal_contrib_uom_vida" model="hr.salary.rule">
+            <field name="name">Contr.Seguro de Vida UOM</field>
+            <field name="sequence" eval="370"/>
+            <field name="code">COMP_UOM_VIDA</field>
+            <field name="category_id" ref="cat_comp"/>
+            <field name="tipo_concepto">4</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+is_uom = bool(contract.cct_id and 'UOM' in (contract.cct_id.name or contract.cct_id.code or '').upper())
+result = is_uom or bool(contract.is_convencionado)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+fee = payslip.company_id.uom_life_insurance_fee or 8045.65
+run_type = payslip.tipo_liquidacion or ""
+is_q1 = run_type == "1° Quincena"
+result_qty = 1.0
+result = 0.0 if is_q1 else fee
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- NOVEDADES / INPUTS DISPONIBLES                           -->
+        <!-- ======================================================== -->
+        <record id="input_hs_norm" model="hr.rule.input">
+            <field name="name">Horas Normales Trabajadas</field>
+            <field name="code">HS_NORM</field>
+            <field name="input_id" ref="rule_jornal_basico"/>
+        </record>
+        <record id="input_hs_ext50" model="hr.rule.input">
+            <field name="name">Horas Extras al 50%</field>
+            <field name="code">HS_EXT50</field>
+            <field name="input_id" ref="rule_jornal_hs_ext50"/>
+        </record>
+        <record id="input_hs_ext100" model="hr.rule.input">
+            <field name="name">Horas Extras al 100%</field>
+            <field name="code">HS_EXT100</field>
+            <field name="input_id" ref="rule_jornal_hs_ext100"/>
+        </record>
+        <record id="input_vac_dias" model="hr.rule.input">
+            <field name="name">Días de Vacaciones Gozadas (Jornal)</field>
+            <field name="code">VAC_DIAS</field>
+            <field name="input_id" ref="rule_jornal_vacaciones"/>
+        </record>
+        <record id="input_vac_dias_mensual" model="hr.rule.input">
+            <field name="name">Días de Vacaciones Gozadas (Mensual)</field>
+            <field name="code">VAC_DIAS</field>
+            <field name="input_id" ref="rule_mensual_vacaciones"/>
+        </record>
+        <record id="input_objetivos_jornal" model="hr.rule.input">
+            <field name="name">Objetivos Mensual (Jornal)</field>
+            <field name="code">OBJETIVOS</field>
+            <field name="input_id" ref="rule_jornal_objetivos"/>
+        </record>
+        <record id="input_premio_prod_jornal" model="hr.rule.input">
+            <field name="name">Premio Producción (Jornal)</field>
+            <field name="code">PREMIO_PROD</field>
+            <field name="input_id" ref="rule_jornal_premio_produccion"/>
+        </record>
+        <record id="input_presentismo_jornal" model="hr.rule.input">
+            <field name="name">Presentismo (Jornal)</field>
+            <field name="code">PRESENTISMO</field>
+            <field name="input_id" ref="rule_jornal_presentismo"/>
+        </record>
+        <record id="input_portitulo_jornal" model="hr.rule.input">
+            <field name="name">Portítulo (Jornal)</field>
+            <field name="code">PORTITULO</field>
+            <field name="input_id" ref="rule_jornal_portitulo"/>
+        </record>
+        <record id="input_asig_no_rem" model="hr.rule.input">
+            <field name="name">Asignación No Remunerativa ($)</field>
+            <field name="code">ASIG_NO_REM</field>
+            <field name="input_id" ref="rule_jornal_norem_uom"/>
+        </record>
+        <record id="input_feriado_jornal" model="hr.rule.input">
+            <field name="name">Horas de Feriado Liquidado</field>
+            <field name="code">FERIADO</field>
+            <field name="input_id" ref="rule_jornal_feriado"/>
+        </record>
+        <record id="input_gratif_no_rem" model="hr.rule.input">
+            <field name="name">Gratificación Extraordinaria No Remunerativa ($)</field>
+            <field name="code">GRATIF_NO_REM</field>
+            <field name="input_id" ref="rule_jornal_gratif_no_rem"/>
+        </record>
+        <record id="input_compens_no_rem" model="hr.rule.input">
+            <field name="name">Compensación Extraordinaria No Remunerativa ($)</field>
+            <field name="code">COMPENS_NO_REM</field>
+            <field name="input_id" ref="rule_jornal_compens_no_rem"/>
+        </record>
+        <record id="input_ded_siradig" model="hr.rule.input">
+            <field name="name">Deducciones Generales SIRADIG F.572 ($)</field>
+            <field name="code">DED_SIRADIG</field>
+            <field name="input_id" ref="rule_jornal_ganancias"/>
+        </record>
+        <record id="input_aporte_adic_ss" model="hr.rule.input">
+            <field name="name">Aporte Adicional Seg. Social ($)</field>
+            <field name="code">APORTE_ADIC_SS</field>
+            <field name="input_id" ref="rule_jornal_aporte_adic_ss"/>
+        </record>
+        <record id="input_descuento_viandas" model="hr.rule.input">
+            <field name="name">Descuento Viandas (Cantidad)</field>
+            <field name="code">DESC_VIANDAS</field>
+            <field name="input_id" ref="rule_jornal_descuento_viandas"/>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- REGLAS: SUELDO ANUAL COMPLEMENTARIO (SAC / AGUINALDO)   -->
+        <!-- ======================================================== -->
+        <!-- Regla: SAC Mensual (Ley 23.041) -->
+        <record id="rule_sac_mensual" model="hr.salary.rule">
+            <field name="name">Sueldo Anual Complementario (SAC)</field>
+            <field name="sequence" eval="10"/>
+            <field name="code">SAC_MENSUAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">120003</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# SAC Mensual — 50% de la mayor remuneración mensual devengada en el semestre (Ley 23.041)
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.monthly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene sueldo configurado.")
+
+base_rem = inputs.SAC_BASE.amount if (inputs.SAC_BASE and inputs.SAC_BASE.amount > 0) else wage
+dias_sem = inputs.SAC_DIAS.amount if (inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0) else 180.0
+prop = min(1.0, max(0.0, dias_sem / 180.0))
+
+result_qty = prop
+result = base_rem * 0.50
+            </field>
+        </record>
+
+        <!-- Regla: SAC Jornal (Ley 23.041) -->
+        <record id="rule_sac_jornal" model="hr.salary.rule">
+            <field name="name">Sueldo Anual Complementario (SAC) Jornal</field>
+            <field name="sequence" eval="10"/>
+            <field name="code">SAC_JORNAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">120003</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+# SAC Jornal — 50% de la remuneración mensual habitual semestral
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+if not wage:
+    raise ValueError("El contrato de " + str(employee.name) + " no tiene valor hora configurado.")
+
+hours_weekly = contract.resource_calendar_id.full_time_required_hours if contract.resource_calendar_id else 44.0
+hs_mes_prom = hours_weekly * 4.333
+base_estimada = wage * hs_mes_prom
+base_rem = inputs.SAC_BASE.amount if (inputs.SAC_BASE and inputs.SAC_BASE.amount > 0) else base_estimada
+dias_sem = inputs.SAC_DIAS.amount if (inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0) else 180.0
+prop = min(1.0, max(0.0, dias_sem / 180.0))
+
+result_qty = prop
+result = base_rem * 0.50
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- REGLAS: LIQUIDACIÓN FINAL (LCT)                          -->
+        <!-- ======================================================== -->
+        <!-- Vacaciones No Gozadas Mensual (Art. 156 LCT) -->
+        <record id="rule_final_vac_no_gozadas_mensual" model="hr.salary.rule">
+            <field name="name">Vacaciones No Gozadas (Art. 156 LCT)</field>
+            <field name="sequence" eval="18"/>
+            <field name="code">VAC_NO_GOZ_MENS</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">150001</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.VAC_NO_GOZ and inputs.VAC_NO_GOZ.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+dias_vng = inputs.VAC_NO_GOZ.amount if (inputs.VAC_NO_GOZ and inputs.VAC_NO_GOZ.amount > 0) else 0.0
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.monthly_wage
+divisor = employee.cct_id.vacation_divisor if (employee.cct_id and employee.cct_id.vacation_divisor) else 25.0
+result_qty = dias_vng
+result = (wage / divisor) if (dias_vng > 0 and wage) else 0.0
+            </field>
+        </record>
+
+        <!-- Vacaciones No Gozadas Jornal (Art. 156 LCT) -->
+        <record id="rule_final_vac_no_gozadas_jornal" model="hr.salary.rule">
+            <field name="name">Vacaciones No Gozadas Jornal (Art. 156 LCT)</field>
+            <field name="sequence" eval="18"/>
+            <field name="code">VAC_NO_GOZ_JORNAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">150001</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.VAC_NO_GOZ and inputs.VAC_NO_GOZ.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+dias_vng = inputs.VAC_NO_GOZ.amount if (inputs.VAC_NO_GOZ and inputs.VAC_NO_GOZ.amount > 0) else 0.0
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+hours_per_day = contract.resource_calendar_id.hours_per_day if contract.resource_calendar_id else 8.8
+result_qty = dias_vng
+result = (wage * hours_per_day * 1.20) if (dias_vng > 0 and wage) else 0.0
+            </field>
+        </record>
+
+        <!-- SAC Proporcional al Egreso Mensual -->
+        <record id="rule_final_sac_prop_mensual" model="hr.salary.rule">
+            <field name="name">SAC Proporcional al Egreso</field>
+            <field name="sequence" eval="25"/>
+            <field name="code">SAC_PROP_MENS</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">120003</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.monthly_wage
+base_rem = inputs.SAC_BASE.amount if (inputs.SAC_BASE and inputs.SAC_BASE.amount > 0) else wage
+dias_sem = inputs.SAC_DIAS.amount if (inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0) else 0.0
+prop = min(1.0, max(0.0, dias_sem / 180.0))
+result_qty = prop
+result = base_rem * 0.50
+            </field>
+        </record>
+
+        <!-- SAC Proporcional al Egreso Jornal -->
+        <record id="rule_final_sac_prop_jornal" model="hr.salary.rule">
+            <field name="name">SAC Proporcional al Egreso Jornal</field>
+            <field name="sequence" eval="25"/>
+            <field name="code">SAC_PROP_JORNAL</field>
+            <field name="category_id" ref="cat_rem"/>
+            <field name="tipo_concepto">1</field>
+            <field name="afip_code">120003</field>
+            <field name="afip_unit">D</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+wage = contract.wage
+if not wage and employee.labor_category_id:
+    wage = employee.labor_category_id.hourly_wage
+hours_weekly = contract.resource_calendar_id.full_time_required_hours if contract.resource_calendar_id else 44.0
+hs_mes_prom = hours_weekly * 4.333
+base_estimada = wage * hs_mes_prom
+base_rem = inputs.SAC_BASE.amount if (inputs.SAC_BASE and inputs.SAC_BASE.amount > 0) else base_estimada
+dias_sem = inputs.SAC_DIAS.amount if (inputs.SAC_DIAS and inputs.SAC_DIAS.amount > 0) else 0.0
+prop = min(1.0, max(0.0, dias_sem / 180.0))
+result_qty = prop
+result = base_rem * 0.50
+            </field>
+        </record>
+
+        <!-- Indemnización por Antigüedad (Art. 245 LCT - No Remunerativo) -->
+        <record id="rule_final_indem_antiguedad" model="hr.salary.rule">
+            <field name="name">Indemnización por Antigüedad (Art. 245 LCT)</field>
+            <field name="sequence" eval="50"/>
+            <field name="code">INDEM_ANTIGUEDAD</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">210000</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.INDEM_ANTIG and inputs.INDEM_ANTIG.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.INDEM_ANTIG.amount if (inputs.INDEM_ANTIG and inputs.INDEM_ANTIG.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- Indemnización Sustitutiva de Preaviso (Art. 232 LCT - No Remunerativo) -->
+        <record id="rule_final_preaviso" model="hr.salary.rule">
+            <field name="name">Indemnización Sustitutiva Preaviso (Art. 232 LCT)</field>
+            <field name="sequence" eval="51"/>
+            <field name="code">INDEM_PREAVISO</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">210001</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.INDEM_PREAV and inputs.INDEM_PREAV.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.INDEM_PREAV.amount if (inputs.INDEM_PREAV and inputs.INDEM_PREAV.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- Integración Mes de Despido (Art. 233 LCT - No Remunerativo) -->
+        <record id="rule_final_integracion_mes" model="hr.salary.rule">
+            <field name="name">Integración Mes de Despido (Art. 233 LCT)</field>
+            <field name="sequence" eval="52"/>
+            <field name="code">INTEG_MES_DESPIDO</field>
+            <field name="category_id" ref="cat_norem"/>
+            <field name="tipo_concepto">2</field>
+            <field name="afip_code">210002</field>
+            <field name="afip_unit">$</field>
+            <field name="condition_select">python</field>
+            <field name="condition_python">
+result = bool(inputs.INTEG_MES and inputs.INTEG_MES.amount > 0)
+            </field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+result_qty = 1.0
+result = inputs.INTEG_MES.amount if (inputs.INTEG_MES and inputs.INTEG_MES.amount > 0) else 0.0
+            </field>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- NOVEDADES / INPUTS ADICIONALES                           -->
+        <!-- ======================================================== -->
+        <record id="input_sac_base" model="hr.rule.input">
+            <field name="name">Base de Cálculo SAC / Mejor Sueldo</field>
+            <field name="code">SAC_BASE</field>
+            <field name="input_id" ref="rule_sac_mensual"/>
+        </record>
+        <record id="input_sac_dias" model="hr.rule.input">
+            <field name="name">Días Trabajados en el Semestre SAC (base 180)</field>
+            <field name="code">SAC_DIAS</field>
+            <field name="input_id" ref="rule_sac_mensual"/>
+        </record>
+        <record id="input_vac_no_goz" model="hr.rule.input">
+            <field name="name">Días Vacaciones No Gozadas (Art. 156 LCT)</field>
+            <field name="code">VAC_NO_GOZ</field>
+            <field name="input_id" ref="rule_final_vac_no_gozadas_mensual"/>
+        </record>
+        <record id="input_indem_antig" model="hr.rule.input">
+            <field name="name">Importe Indemnización Antigüedad (Art. 245 LCT)</field>
+            <field name="code">INDEM_ANTIG</field>
+            <field name="input_id" ref="rule_final_indem_antiguedad"/>
+        </record>
+        <record id="input_indem_preav" model="hr.rule.input">
+            <field name="name">Importe Indemnización Preaviso (Art. 232 LCT)</field>
+            <field name="code">INDEM_PREAV</field>
+            <field name="input_id" ref="rule_final_preaviso"/>
+        </record>
+        <record id="input_integ_mes" model="hr.rule.input">
+            <field name="name">Importe Integración Mes de Despido (Art. 233 LCT)</field>
+            <field name="code">INTEG_MES</field>
+            <field name="input_id" ref="rule_final_integracion_mes"/>
+        </record>
+
+        <!-- ======================================================== -->
+        <!-- ESTRUCTURAS SALARIALES ARGENTINAS                        -->
+        <!-- ======================================================== -->
+        <!-- 1. Estructura Salarial para Jornales Quincenales -->
+        <record id="structure_jornal_quincenal_arg" model="hr.payroll.structure">
+            <field name="name">Jornales Quincenales (Argentina)</field>
+            <field name="code">JORNAL_QUINC_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_jornal_basico'),
+                ref('rule_jornal_feriado'),
+                ref('rule_mensual_antiguedad'),
+                ref('rule_jornal_hs_ext50'),
+                ref('rule_jornal_objetivos'),
+                ref('rule_jornal_premio_produccion'),
+                ref('rule_jornal_presentismo'),
+                ref('rule_jornal_portitulo'),
+                ref('rule_jornal_hs_ext100'),
+                ref('rule_jornal_vacaciones'),
+                ref('rule_jornal_norem_uom'),
+                ref('rule_jornal_gratif_no_rem'),
+                ref('rule_jornal_compens_no_rem'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_aporte_adic_ss'),
+                ref('rule_jornal_descuento_viandas'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
+                ref('rule_jornal_contrib_scvo'),
+                ref('rule_jornal_contrib_uom_vida'),
+            ])]"/>
+        </record>
+
+        <!-- 2. Estructura Salarial para Mensuales -->
+        <record id="structure_mensual_arg" model="hr.payroll.structure">
+            <field name="name">Mensuales Administración / Planta (Argentina)</field>
+            <field name="code">MENSUAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_mensual_basico'),
+                ref('rule_mensual_vacaciones'),
+                ref('rule_mensual_antiguedad'),
+                ref('rule_jornal_norem_uom'),
+                ref('rule_jornal_gratif_no_rem'),
+                ref('rule_jornal_compens_no_rem'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones_art'),
+                ref('rule_jornal_contrib_jub'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contrib_aaff'),
+                ref('rule_jornal_contrib_fne'),
+                ref('rule_jornal_contrib_inssjp'),
+                ref('rule_jornal_contrib_scvo'),
+                ref('rule_jornal_contrib_uom_vida'),
+            ])]"/>
+        </record>
+
+        <!-- 3. Estructura Salarial Adelanto Vacaciones Mensual (Caso 2) -->
+        <record id="structure_vacaciones_mensual_arg" model="hr.payroll.structure">
+            <field name="name">Adelanto de Vacaciones Mensual (Art. 155 LCT)</field>
+            <field name="code">VACACIONES_MENSUAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_mensual_vacaciones'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+
+        <!-- 4. Estructura Salarial Adelanto Vacaciones Jornal (Caso 2) -->
+        <record id="structure_vacaciones_jornal_arg" model="hr.payroll.structure">
+            <field name="name">Adelanto de Vacaciones Jornal (Art. 155 LCT)</field>
+            <field name="code">VACACIONES_JORNAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_jornal_vacaciones'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+
+        <!-- 5. Estructura Salarial SAC Mensual -->
+        <record id="structure_sac_mensual_arg" model="hr.payroll.structure">
+            <field name="name">Sueldo Anual Complementario (SAC) Mensual</field>
+            <field name="code">SAC_MENSUAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_sac_mensual'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+
+        <!-- 6. Estructura Salarial SAC Jornal -->
+        <record id="structure_sac_jornal_arg" model="hr.payroll.structure">
+            <field name="name">Sueldo Anual Complementario (SAC) Jornal</field>
+            <field name="code">SAC_JORNAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_sac_jornal'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+
+        <!-- 7. Estructura Salarial Liquidación Final Mensual -->
+        <record id="structure_final_mensual_arg" model="hr.payroll.structure">
+            <field name="name">Liquidación Final Mensual (Argentina)</field>
+            <field name="code">FINAL_MENSUAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_mensual_basico'),
+                ref('rule_final_vac_no_gozadas_mensual'),
+                ref('rule_final_sac_prop_mensual'),
+                ref('rule_final_indem_antiguedad'),
+                ref('rule_final_preaviso'),
+                ref('rule_final_integracion_mes'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+
+        <!-- 8. Estructura Salarial Liquidación Final Jornal -->
+        <record id="structure_final_jornal_arg" model="hr.payroll.structure">
+            <field name="name">Liquidación Final Jornal (Argentina)</field>
+            <field name="code">FINAL_JORNAL_ARG</field>
+            <field name="rule_ids" eval="[(6, 0, [
+                ref('rule_jornal_basico'),
+                ref('rule_final_vac_no_gozadas_jornal'),
+                ref('rule_final_sac_prop_jornal'),
+                ref('rule_final_indem_antiguedad'),
+                ref('rule_final_preaviso'),
+                ref('rule_final_integracion_mes'),
+                ref('rule_jornal_gross'),
+                ref('rule_jornal_jubilacion'),
+                ref('rule_jornal_inssjp'),
+                ref('rule_jornal_obra_social'),
+                ref('rule_jornal_sindicato'),
+                ref('rule_jornal_ganancias'),
+                ref('rule_jornal_neto'),
+                ref('rule_jornal_contribuciones'),
+                ref('rule_jornal_contribuciones_os'),
+                ref('rule_jornal_contribuciones_art'),
+            ])]"/>
+        </record>
+    </data>
+</odoo>

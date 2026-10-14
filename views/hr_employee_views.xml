@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_payroll_arg" model="ir.ui.view">
+        <field name="name">hr.employee.form.payroll.arg</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_view_siradig_f572"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-file-text-o"
+                    help="Ver declaraciones juradas SIRADIG F.572 presentadas por este empleado en AFIP."
+                >
+                    <field name="siradig_count" widget="statinfo" string="SIRADIG F.572"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Nómina Argentina">
+                    <group>
+                        <group string="Identificación y Pago">
+                            <field name="cuil"/>
+                            <field name="legajo"/>
+                            <field name="payment_type"/>
+                            <field name="cbu"/>
+                            <field name="workplace_location"/>
+                        </group>
+                        <group string="Convenio y Remuneración">
+                            <field name="wage_type"/>
+                            <field name="is_convencionado"/>
+                            <field name="cct_id"/>
+                            <field name="labor_category_id" domain="[('cct_id', '=', cct_id), ('category_type', '=', wage_type)]"/>
+                            <field name="wage" string="Sueldo / Valor Hora"/>
+                            <field name="struct_id"/>
+                            <field name="resource_calendar_id"/>
+                            <field name="health_insurance_id"/>
+                            <field name="health_insurance_adherents"/>
+                            <field name="aporte_adicional_ss_monto"/>
+                        </group>
+                    </group>
+                    <group string="Impuesto a las Ganancias 4ta Categoría (Deducciones Personales SIRADIG F.572)">
+                        <div class="alert alert-light border col-12 mb-2" role="alert" style="font-size: 0.9em; color: #495057;">
+                            💡 <b>Deducciones Personales (Art. 30 LIG):</b> Estos valores se pueden cargar manualmente o actualizarse automáticamente importando el archivo F.572 de AFIP en <b>Nómina Argentina > Importar SIRADIG AFIP</b>.
+                        </div>
+                        <group>
+                            <field name="ganancias_conyuge"/>
+                            <field name="ganancias_hijos"/>
+                            <field name="ganancias_hijos_incapacitados"/>
+                        </group>
+                        <group>
+                            <field name="ganancias_otras_deducciones_mensual"/>
+                            <field name="siradig_latest_id" readonly="1" invisible="not siradig_latest_id"/>
+                            <button
+                                name="action_reapply_latest_siradig"
+                                type="object"
+                                string="🔄 Recargar desde Último F.572"
+                                class="btn-sm btn-outline-primary mt-2"
+                                invisible="siradig_count == 0"
+                                help="Vuelve a volcar en los campos superiores las deducciones del último F.572 importado."
+                            />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

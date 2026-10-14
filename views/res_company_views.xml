@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_payroll_arg" model="ir.ui.view">
+        <field name="name">res.company.form.payroll.arg</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Nómina Argentina (ARCA / AFIP)">
+                    <group>
+                        <group string="Datos Fiscales y Previsionales">
+                            <field name="cuit"/>
+                            <field name="afip_company_type"/>
+                        </group>
+                        <group string="Último Pago Seguridad Social (F.931)">
+                            <field name="last_ss_bank_id"/>
+                            <field name="last_ss_month"/>
+                            <field name="last_ss_year"/>
+                            <field name="last_ss_payment_date"/>
+                        </group>
+                    </group>
+                    <group string="Parámetros de Aportes y Contribuciones (AFIP / F.931)">
+                        <group string="Contribuciones Patronales (A cargo de la Empresa)">
+                            <field name="ss_contrib_rate"/>
+                            <field name="jubilacion_patronal_rate"/>
+                            <field name="inssjp_patronal_rate"/>
+                            <field name="aaff_patronal_rate"/>
+                            <field name="fne_patronal_rate"/>
+                            <field name="os_patronal_rate"/>
+                            <field name="coef_contrib_ss"/>
+                            <field name="coef_contrib_os"/>
+                            <field name="art_variable_rate"/>
+                            <field name="art_fixed_fee"/>
+                            <field name="life_insurance_fee"/>
+                            <field name="uom_life_insurance_fee"/>
+                            <field name="detraccion_sipa"/>
+                        </group>
+                        <group string="Retenciones Legales (A cargo del Trabajador)">
+                            <field name="tope_imponible_max_retencion"/>
+                            <field name="jubilacion_contrib_rate"/>
+                            <field name="inssjp_contrib_rate"/>
+                            <field name="os_worker_rate"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
