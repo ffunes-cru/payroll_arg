@@ -21,6 +21,8 @@ Liquidación de sueldos argentina sobre el módulo `payroll` de OCA:
 
 ## Documentación
 
+**Sitio web:** <https://ffunes-cru.github.io/payroll_arg/> (se publica solo con cada cambio en `main`).
+
 Leer en este orden. Los diagramas son [Mermaid](https://mermaid.js.org/): GitHub, GitLab, VS Code (con
 *Markdown Preview Mermaid Support*) y el HTML de Doxygen los dibujan solos.
 

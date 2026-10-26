@@ -1,0 +1,74 @@
+# Sitio de documentación (GitHub Pages). Local: pip install -r requirements-docs.txt && mkdocs serve
+site_name: Nómina Argentina
+site_description: Liquidación de sueldos argentina para Odoo 19 (jornalizados UOM y mensualizados)
+site_url: https://ffunes-cru.github.io/payroll_arg/
+repo_url: https://github.com/ffunes-cru/payroll_arg
+repo_name: ffunes-cru/payroll_arg
+edit_uri: edit/main/docs/
+copyright: Copyright © 2026 Franco Funes · AGPL-3
+docs_dir: docs
+exclude_docs: |
+  Doxyfile
+  api/
+
+theme:
+  name: material
+  language: es
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/weather-night, name: Modo oscuro}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/weather-sunny, name: Modo claro}
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+      # Anclas como las de GitHub (conservan acentos), para que los enlaces sirvan en los dos lados.
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Inicio: index.md
+  - Usuario:
+      - usuario/README.md
+      - Guía de uso: usuario/guia.md
+      - Escenarios de prueba: usuario/escenarios.md
+      - Resultados esperados: usuario/resultados.md
+      - Preparar una instancia: usuario/preparar-instancia.md
+  - Funcional:
+      - Conceptos: conceptos.md
+      - Liquidación: liquidacion.md
+      - Flujos: flujos.md
+      - Operación: operacion.md
+  - Técnica:
+      - Arquitectura: arquitectura.md
+      - Conceptos de Odoo: odoo.md
+      - Recetas: recetas.md
+      - Referencia generada: referencia.md
+  - Revisión:
+      - Revisión de código y legal: revision.md
+      - Decisiones: decisiones.md
+      - Preguntas abiertas: pendientes.md

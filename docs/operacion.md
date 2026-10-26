@@ -74,7 +74,15 @@ Desde la carpeta de Odoo (`~/odoo_sv/odoo`):
 
 # HTML de la documentación del código (desde addons/payroll_arg)
 doxygen docs/Doxyfile   # → docs/api/html/index.html
+
+# Sitio de documentación (el mismo que publica GitHub Pages), en http://127.0.0.1:8000
+pip install -r requirements-docs.txt
+mkdocs serve
+mkdocs build --strict   # lo que corre el CI: falla con enlaces o anclas rotos
 ```
+
+El sitio (<https://ffunes-cru.github.io/payroll_arg/>) lo publica `.github/workflows/docs.yml` en cada push a
+`main` que toque `docs/`. Una página nueva de `docs/` tiene que agregarse al `nav` de `mkdocs.yml`.
 
 `tests/test_documentacion.py` falla si falta un docstring o si `docs/referencia.md` quedó viejo.
 
