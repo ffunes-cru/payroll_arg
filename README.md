@@ -26,7 +26,7 @@ Leer en este orden. Los diagramas son [Mermaid](https://mermaid.js.org/): GitHub
 
 | Documento | Para qué |
 |---|---|
-| [Conceptos](docs/conceptos.md) | El negocio, jornalizados vs. mensualizados, glosario y un recibo real paso a paso. Empezar acá. |
+| [Conceptos](docs/conceptos.md) | El negocio, jornalizados vs. mensualizados, glosario y un recibo de referencia paso a paso. Empezar acá. |
 | [Liquidación](docs/liquidacion.md) | Cómo se calcula cada concepto, con su norma: haberes, retenciones, contribuciones, Ganancias, SAC, vacaciones, final. |
 | [Flujos](docs/flujos.md) | El mes del liquidador, el lote paso a paso, de dónde sale cada novedad, vacaciones, SAC, final, Ganancias y exportaciones. |
 | [Arquitectura](docs/arquitectura.md) | Qué hace cada archivo, cómo se calcula un recibo, decisiones de diseño y puntos de extensión. |

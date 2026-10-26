@@ -72,7 +72,7 @@ separado (decisión confirmada). Se puede pisar por recibo con *Tope Imponible R
 
 **Base.**
 - Jornalizados en quincena: el remunerativo de **todas** las liquidaciones del último mes con recibos
-  en espera o hechos. Es el cuadro "Costo Total Empleado" de los recibos reales, que repite el último
+  en espera o hechos. Es el cuadro "Costo Total Empleado" de los recibos de referencia, que repite el último
   mes declarado. Se puede fijar a mano con *Bruto Mes Anterior Manual*.
 - El resto (mensualizados y lotes de SAC, vacaciones y final): el remunerativo del propio recibo.
 
@@ -134,8 +134,8 @@ Estructuras `FINAL_*_ARG`:
 
 Ver C7, C21 y C22.
 
-## Valores de los recibos reales
+## Recibos de referencia
 
-`tests/test_recibos_reales.py` reproduce al centavo la 1° Quincena de septiembre y la 2° Quincena de
+`tests/test_recibos_referencia.py`, basado en recibos de referencia, reproduce al centavo la 1° Quincena de septiembre y la 2° Quincena de
 agosto de 2026 de un operario UOM. Si una regla cambia y esos tests fallan, el cambio rompe un recibo
 real: revisarlo con el liquidador antes de ajustar el test.

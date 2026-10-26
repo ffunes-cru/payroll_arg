@@ -17,8 +17,8 @@ La documentación funcional y técnica está en `README.md` y `docs/`; leer ante
 - **Todavía no hay datos de producción**: los datos de `mydb` son de prueba. Los cambios de esquema se
   resuelven con `-u` y, si hace falta, una migración simple; no mantener compatibilidad hacia atrás
   con código muerto.
-- Referencia de verdad: dos recibos reales (1° Quincena sep-2026 y 2° Quincena ago-2026, valor hora
-  $6.675,34, 6 años) reproducidos al centavo en `tests/test_recibos_reales.py`. Si un cambio los rompe,
+- Referencia de verdad: dos recibos de referencia basados en recibos de referencia (1° Quincena sep-2026 y 2° Quincena ago-2026, valor hora
+  $6.675,34, 6 años) reproducidos al centavo en `tests/test_recibos_referencia.py`. Si un cambio los rompe,
   se frena y se consulta: no se ajusta el test para que pase.
 
 ## Decisiones de negocio confirmadas
@@ -67,7 +67,7 @@ El repo `odoo/` de afuera no versiona estos addons (aparecen sin seguimiento): n
 - **Por cada hallazgo:**
   1. Test de regresión que falle con el código actual (reproduce el caso de la revisión).
   2. Arreglo mínimo.
-  3. Tests completos de los dos módulos en verde, recibos reales al centavo.
+  3. Tests completos de los dos módulos en verde, recibos de referencia al centavo.
   4. Quitar el `@bug <id>` del código y el comentario `Ver <id>` de la regla; pasar el punto de
      `docs/revision.md` a "Resueltos" con el PR.
   5. Actualizar `docs/liquidacion.md` / `flujos.md` / `docs/usuario/` si cambia el comportamiento, y

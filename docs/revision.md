@@ -17,7 +17,7 @@ con un comentario `Ver <id>` en la regla salarial.
 - **Estado.** *Confirmado*: reproducido en una base de prueba. *Código*: se ve leyendo el código.
   *Norma*: depende de una interpretación legal, verificar con el estudio contable o el F.931 real.
 
-Los recibos reales de referencia (`tests/test_recibos_reales.py`) siguen dando al centavo: ninguno de
+Los recibos de referencia de referencia (`tests/test_recibos_referencia.py`) siguen dando al centavo: ninguno de
 estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemnizaciones ni Ganancias).
 
 ## Resumen
@@ -220,7 +220,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
   la práctica de ARCA es aplicar el 50%.
 - **Sin AAFF ni FNE.** Se resta en `COMP_JUB` y `COMP_INSSJP`, pero no en `COMP_AAFF` ni `COMP_FNE`. La
   Ley 27.430 (art. 167), que creó el mecanismo, la aplica a las contribuciones de las leyes 19.032,
-  24.013, 24.241 y 24.714 (SIPA, INSSJP, FNE y AAFF). Los recibos reales no la restan en AAFF / FNE:
+  24.013, 24.241 y 24.714 (SIPA, INSSJP, FNE y AAFF). Los recibos de referencia no la restan en AAFF / FNE:
   contrastar con un F.931 real antes de cambiar.
 - **Proporcional.** En jornadas parciales o meses incompletos la detracción es proporcional; hoy
   siempre es completa.
@@ -247,14 +247,14 @@ las horas del calendario de los días de vacaciones (`resource.calendar.get_work
 **Feriado: horas promedio en vez de las del día.** *Baja, código.*
 
 `FERIADO = feriados × hours_per_day` (8,8). El calendario UOM tiene 9 hs de lunes a jueves y 8 el
-viernes, y el recibo real del 17/08 paga 9 hs. Sumar las horas del calendario de cada feriado.
+viernes, y el recibo de referencia del 17/08 paga 9 hs. Sumar las horas del calendario de cada feriado.
 
 ### C15
 
 **Quincena fija de 88 hs.** *Media, código (convención a confirmar).*
 
 `_get_calendar_hours_for_period()` da 2 × horas semanales para cualquier período de hasta 16 días, sin
-mirar si la quincena tiene 10, 11 o 12 días hábiles. Coincide con los recibos reales, por eso se dejó.
+mirar si la quincena tiene 10, 11 o 12 días hábiles. Coincide con los recibos de referencia, por eso se dejó.
 Sin el módulo de asistencias, tampoco descuenta faltas, licencias sin goce ni enfermedad: el jornalizado
 cobra 88 hs aunque haya faltado. Licencias pagas de jornalizados (enfermedad inculpable, Art. 208 LCT;
 licencias especiales, Art. 158) no tienen concepto propio. Confirmar si la convención es "88 fijas" u
@@ -303,7 +303,7 @@ los no afiliados sólo corresponde una contribución solidaria si el convenio la
 **Contribuciones repetidas en las dos quincenas.** *Media, código.*
 
 Todas las contribuciones (incluido el SCVO, prima mensual) se calculan en la 1° y en la 2° quincena
-sobre el remunerativo del mes anterior: replica el cuadro "Costo Total Empleado" de los recibos reales,
+sobre el remunerativo del mes anterior: replica el cuadro "Costo Total Empleado" de los recibos de referencia,
 pero `total_contribuciones` y `costo_total_empleador` de un mes suman el costo dos veces. El comentario
 del XML decía "sólo 2° Quincena" (corregido). Decisión D7 ("error en el ejemplo"); pregunta [P10](pendientes.md#p10-costo-del-empleador-en-los-reportes-c20).
 Propuesta: el cuadro del recibo sigue mostrando el último mes declarado, como dato informativo y
@@ -519,4 +519,4 @@ borrarlos.
 - Ganancias por el método acumulativo con escala y deducciones proporcionales al mes (RG 4003).
 - Las novedades tienen una sola fuente (las entradas del recibo) y el cálculo nunca las modifica: se
   puede recalcular sin perder datos.
-- Los dos recibos reales se reproducen al centavo, con tests.
+- Los dos recibos de referencia se reproducen al centavo, con tests.

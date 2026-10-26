@@ -24,7 +24,7 @@ máxima es el 50% del tope del mes de pago (2.125.000)?
 ### P2. Detracción de la Ley 27.541 (C11)
 
 **a)** Hoy se resta en jubilación e INSSJP patronales, pero no en AAFF ni FNE. La Ley 27.430 (art. 167)
-la aplica a las cuatro. Los recibos reales tampoco la restan en AAFF y FNE. ¿Cómo está en el F.931 real
+la aplica a las cuatro. Los recibos de referencia tampoco la restan en AAFF y FNE. ¿Cómo está en el F.931 real
 de la empresa?
 
 **b)** En los lotes de SAC, vacaciones y final se resta otra vez completa (D8: puede haber varios
@@ -131,7 +131,7 @@ contribuciones reales se calculan una vez por mes, en la 2° quincena, sobre Q1 
   ¿la base del mes anterior suma también el no remunerativo para Obra Social?
 - ¿Los mensualizados también deberían contribuir sobre el mes anterior, como los jornalizados, o sobre
   su propio recibo como hoy?
-- Para cerrar la verificación de los recibos reales: ¿a qué mes corresponde cada uno (la base de la
+- Para cerrar la verificación de los recibos de referencia: ¿a qué mes corresponde cada uno (la base de la
   1° quincena es 2.251.856,26 y la de la 2° 3.945.490,21)?
 
 **Respuesta:**
@@ -176,7 +176,7 @@ control.
 
 ### P16. Formato del recibo PDF
 
-- **Antigüedad:** hoy muestra cantidad 6,00 y base 647.507,98 (total); el recibo real muestra 0,06 y
+- **Antigüedad:** hoy muestra cantidad 6,00 y base 647.507,98 (total); el recibo de referencia muestra 0,06 y
   400,52 (por hora). ¿Cuál se quiere?
 - **Nombre:** sale "Nombre: , JOHN DOE". ¿Apellido y nombre separados? Hay que cargarlos así en la ficha.
 - **Importe en letras:** dice "punto tres cuatro". ¿"con 34/100"?

@@ -521,7 +521,7 @@ class HrPayslip(models.Model):
         @bug C13: resta días **corridos** × horas promedio (incluye sábados y domingos); una semana de
              vacaciones descuenta 61,6 hs en lugar de 44.
         @bug C14: el feriado vale `hours_per_day` (8,8 promedio) y no las horas de ese día del calendario
-             (9 hs un lunes, como en el recibo real).
+             (9 hs un lunes, como en el recibo de referencia).
         """
         employee = contract.employee_id
         tipo = run.tipo_liquidacion if run else None
@@ -601,7 +601,7 @@ class HrPayslip(models.Model):
 
         Horas semanales = suma de las franjas del calendario (sin almuerzo; si hay franjas duplicadas
         para el mismo día y turno, se toma la mayor). Un período de hasta 16 días es una quincena y vale
-        **dos semanas** (44 hs × 2 = 88 hs, convención de los recibos reales); uno más largo, las horas
+        **dos semanas** (44 hs × 2 = 88 hs, convención de los recibos de referencia); uno más largo, las horas
         semanales × días / 7.
 
         @param calendar Calendario (`resource.calendar`) del contrato.
@@ -725,7 +725,7 @@ class HrPayslip(models.Model):
         mes con recibos calculados anterior al período (todas las liquidaciones de ese mes:
         quincenas, SAC, vacaciones, ajustes). Se puede fijar a mano con prev_month_gross_manual.
 
-        Replica el cuadro "Costo Total Empleado" de los recibos reales, que muestra las contribuciones
+        Replica el cuadro "Costo Total Empleado" de los recibos de referencia, que muestra las contribuciones
         del último mes declarado en el F.931 (las de la quincena todavía no se conocen). Cuentan los
         recibos en espera o hechos; si un mes no tiene recibos (licencia larga) se sigue hacia atrás.
 
@@ -774,7 +774,7 @@ class HrPayslip(models.Model):
         """(coef. Seg. Social, coef. Obra Social) del lote o, sin lote, de la compañía.
 
         Multiplican las contribuciones patronales (`result_qty` de las reglas COMP_*): 1 = alícuota
-        plena; los recibos reales usan 0,10 y 0,15.
+        plena; los recibos de referencia usan 0,10 y 0,15.
 
         @return Tupla (coef_ss, coef_os).
         """

@@ -2,9 +2,10 @@ from odoo.tests import TransactionCase, tagged
 
 
 @tagged("post_install", "-at_install")
-class TestRecibosReales(TransactionCase):
-    """Recibos reales UOM (valor hora $6.675,34, 6 años de antigüedad). Las bases de
-    contribuciones se cargan a mano: son el bruto del último mes declarado."""
+class TestRecibosReferencia(TransactionCase):
+    """Recibos de referencia UOM, basados en recibos reales (valor hora $6.675,34, 6 años de
+    antigüedad). Las bases de contribuciones se cargan a mano: son el bruto del último mes
+    declarado."""
 
     @classmethod
     def setUpClass(cls):

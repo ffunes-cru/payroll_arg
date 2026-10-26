@@ -60,7 +60,7 @@ flowchart LR
 | `wizard/hr_siradig_import_wizard.py` | Importación de F.572 (XML / ZIP). |
 | `migrations/19.0.2.0.0/` | Limpia asistencias duplicadas de los calendarios. |
 | `tools/documentacion.py` | Verificador de docstrings y generador de `docs/referencia.md`. |
-| `tests/` | Recibos reales, novedades y documentación. |
+| `tests/` | Recibos de referencia, novedades y documentación. |
 
 ## Cómo se calcula un recibo
 
@@ -96,7 +96,7 @@ sequenceDiagram
 - **El tipo de concepto AFIP manda en los totales**, no la categoría: una regla nueva cae en el total
   correcto con sólo elegir su tipo.
 - **Medio tope por quincena** y **contribuciones de jornalizados sobre el mes anterior**: replican los
-  recibos reales del cliente. Ver C9 y C20 en la [revisión](revision.md).
+  recibos de referencia. Ver C9 y C20 en la [revisión](revision.md).
 - **Estructura por tipo de lote:** Vacaciones, SAC y Final usan su estructura aunque el contrato tenga
   otra, y un mismo lote sirve para jornalizados y mensualizados.
 - **Alícuotas en la compañía, no en las reglas:** cambiar una alícuota no requiere tocar el XML. Pero no
