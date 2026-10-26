@@ -59,6 +59,10 @@ documento de `docs/` que corresponda y commitear todo junto.
 3. Si cierra un punto de la [revisión](revision.md), quitar la marca `@bug` del código y el punto del
    documento.
 
+## Escribir un test
+
+Ver [Tests](tests.md): anatomía, ORM, `Form`, permisos y cómo correrlos.
+
 ## Documentar código
 
 El código se documenta en formato **Doxygen**, en español (mismo criterio que `cotizador` y

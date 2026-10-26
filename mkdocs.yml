@@ -68,6 +68,7 @@ nav:
       - Conceptos de Odoo: odoo.md
       - Recetas: recetas.md
       - Seguridad: seguridad.md
+      - Tests: tests.md
       - Referencia generada: referencia.md
       - Código (Doxygen): https://ffunes-cru.github.io/payroll_arg/api/
   - Revisión:

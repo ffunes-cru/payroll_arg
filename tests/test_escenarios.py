@@ -9,7 +9,10 @@ from ..tools.escenarios import ARCHIVO_RESULTADOS, _recibo, cargar, ejecutar, ge
 
 @tagged("post_install", "-at_install")
 class TestEscenarios(TransactionCase):
-    """Ver tools/escenarios.py y docs/usuario/escenarios.md."""
+    """Ver tools/escenarios.py y docs/usuario/escenarios.md.
+
+    @see docs/tests.md, https://www.odoo.com/documentation/19.0/developer/reference/backend/testing.html#testing-python-code
+    """
 
     @classmethod
     def setUpClass(cls):

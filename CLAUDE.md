@@ -128,6 +128,9 @@ El usuario revisa en GitHub. Cuando pide "atender los comentarios del PR N":
 - **Documentación Doxygen obligatoria** (`docs/recetas.md#documentar-código`): `@file`, docstring con qué y
   por qué (regla de negocio y norma), `@param`, `@return`, `@throws`, `@bug <id>` mientras exista el
   problema. `tests/test_documentacion.py` falla si falta algo o si `docs/referencia.md` quedó viejo.
+- **Conceptos de Odoo con su fuente:** al usar o explicar algo de Odoo (ORM, reglas, vistas, tests),
+  documentarlo en `docs/odoo.md` o `docs/tests.md` con el enlace a la documentación oficial de Odoo 19, y
+  poner `@see` con ese enlace en el docstring correspondiente (Doxygen lo publica como enlace).
 - Idioma: en `payroll_arg` y `payroll_arg_attendance`, docs y docstrings en español; commits y PR en
   inglés. En `payroll_arg_reportes` (librería) **todo en inglés**: comentarios, docstrings y commits.
 - Cambio de comportamiento visible para el liquidador = actualizar la guía de usuario y su escenario.

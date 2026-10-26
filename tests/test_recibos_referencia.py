@@ -5,7 +5,10 @@ from odoo.tests import TransactionCase, tagged
 class TestRecibosReferencia(TransactionCase):
     """Recibos de referencia UOM, basados en recibos reales (valor hora $6.675,34, 6 años de
     antigüedad). Las bases de contribuciones se cargan a mano: son el bruto del último mes
-    declarado."""
+    declarado.
+
+    @see docs/tests.md (sintaxis de los tests), https://www.odoo.com/documentation/19.0/developer/reference/backend/testing.html#testing-python-code
+    """
 
     @classmethod
     def setUpClass(cls):

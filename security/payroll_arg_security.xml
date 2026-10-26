@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!--
+        Reglas de registro (ir.rule). En domain_force, lo que va entre comillas a la izquierda es un
+        campo del registro (o un camino: payslip_id.company_id); lo que va sin comillas a la derecha son
+        variables de ir.rule._eval_context(): user (usuario actual), company_ids (compañías tildadas en
+        el selector) y company_id (compañía activa). Explicación: docs/odoo.md#permisos.
+        Odoo: https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#record-rules
+    -->
     <!-- ============================================================== -->
     <!-- Nómina / Oficial: sólo empleados propios, sin departamento o   -->
     <!-- de los departamentos que dirige (igual que la regla de OCA     -->
