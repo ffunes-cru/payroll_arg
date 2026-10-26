@@ -132,3 +132,59 @@ class TestGuiaUsuario(TransactionCase):
         for campo in ("contract_type_id", "structure_type_id"):
             nodo = pagina.xpath(f".//field[@name='{campo}']")
             self.assertTrue(not nodo or nodo[0].get("invisible") in ("1", "True"), campo)
+
+    # ── Recorrido: la guía completa ──
+
+    def test_recorrido_quincena_completa(self):
+        """Sección 5, 6, 9 y 10: lote, valores del lote, matriz, recibo, exportaciones y cierre."""
+        lote = self._lote("1° Quincena", "2026-08-01", "2026-08-15")
+        self._generar(lote, self.con_contrato)
+        recibo = lote.slip_ids
+        self.assertEqual(len(recibo), 1)
+        form = Form(lote)
+        with form.novelty_ids.new() as valor:
+            valor.input_id = self.env["hr.rule.input"].search([("code", "=", "PRECIO_VIANDA")], limit=1)
+            valor.amount = 2500
+        form.save()
+        lote.novelty_ids.action_apply()
+        viandas = recibo.input_line_ids.filtered(lambda i: i.code == "CANT_VIANDAS")
+        form = Form(lote)
+        fila = lote.input_qty_line_ids.ids.index(viandas.id)
+        with form.input_qty_line_ids.edit(fila) as celda:
+            celda.amount = 10
+        form.save()
+        form = Form(recibo)
+        form.prev_month_gross_manual = 900000
+        form.save()
+        lote.action_compute_payslips()
+        lineas = {linea.code: linea.total for linea in recibo.line_ids}
+        self.assertEqual(lineas["DESC_VIANDAS"], -25000)
+        self.assertEqual(lineas["BASIC_HORAS"], 88 * 4500)
+        for tipo in ("recibo_pdf", "lsd_txt", "f931_txt", "banco_galicia", "banco_santander"):
+            exportar = self.env["payroll.arg.export.wizard"].create({"payslip_run_id": lote.id, "report_type": tipo})
+            exportar.action_generate_report()
+            self.assertTrue(exportar.file_data, tipo)
+        lote.close_payslip_run()
+        self.assertEqual(recibo.state, "done")
+
+    def test_recorrido_otras_liquidaciones(self):
+        """Sección 8: vacaciones aprobadas por formulario y lotes de Vacaciones, SAC, Liquidación Final,
+        Mensual y Ajustes."""
+        form = Form(self.env["hr.leave"])
+        form.employee_id = self.con_contrato
+        form.holiday_status_id = self.env.ref("payroll_arg.holiday_status_vacaciones_lct")
+        form.request_date_from = "2026-09-07"
+        form.request_date_to = "2026-09-20"
+        licencia = form.save()
+        licencia.action_approve()
+        if licencia.state != "validate":
+            licencia.action_validate()
+        for tipo, desde, hasta in (("Vacaciones", "2026-09-07", "2026-09-20"), ("SAC", "2026-07-01", "2026-12-31"),
+                                   ("Liquidación Final", "2026-09-01", "2026-09-15"),
+                                   ("Ajustes", "2026-09-01", "2026-09-30")):
+            lote = self._lote(tipo, desde, hasta)
+            self._generar(lote, self.con_contrato)
+            lote.action_compute_payslips()
+            self.assertTrue(lote.slip_ids.line_ids, tipo)
+        vacaciones = self.env["hr.payslip.run"].search([("name", "=", "Guía Vacaciones")]).slip_ids
+        self.assertEqual(vacaciones.input_line_ids.filtered(lambda i: i.code == "VAC_DIAS").amount, 14)
