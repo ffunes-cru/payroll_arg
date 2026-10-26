@@ -80,3 +80,15 @@ class TestGuiaUsuario(TransactionCase):
         self.assertEqual(recibo.antiguedad_anios, 2)
         recibo.compute_sheet()
         self.assertTrue(recibo.line_ids)
+
+    # ── G4: empleado sin contrato en un lote ──
+
+    def test_g4_lote_con_empleado_sin_contrato(self):
+        """Generar un lote con un empleado sin contrato avisa quién es y dónde se corrige, antes de crear
+        recibos; el lote no queda a medias."""
+        lote = self._lote("1° Quincena", "2026-08-01", "2026-08-15")
+        with self.assertRaises(UserError) as error:
+            self._generar(lote, self.con_contrato | self.sin_contrato)
+        self.assertIn("Guía Sin Contrato", str(error.exception))
+        self.assertIn("Fecha de inicio del contrato", str(error.exception))
+        self.assertFalse(lote.slip_ids)

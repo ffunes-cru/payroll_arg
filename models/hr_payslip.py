@@ -1043,7 +1043,8 @@ class HrPayslip(models.Model):
             if not slip.contract_id:
                 raise UserError(
                     f"El recibo de '{slip.employee_id.name}' no tiene contrato vigente en el período "
-                    f"{slip.date_from} – {slip.date_to}."
+                    f"{slip.date_from:%d/%m/%Y} – {slip.date_to:%d/%m/%Y}. Cargar la Fecha de inicio del "
+                    "contrato en Empleados › (empleado) › pestaña Nómina."
                 )
             if not slip.struct_id:
                 slip.struct_id = slip._get_struct_for(slip.contract_id, slip.payslip_run_id)
