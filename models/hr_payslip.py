@@ -248,18 +248,18 @@ class HrPayslip(models.Model):
     def _get_antiguedad_start_date(self):
         """Fecha desde la que se cuenta la antigüedad (Art. 18 LCT: tiempo de servicio con el empleador).
 
-        Cascada: inicio del contrato del recibo → inicio de contrato / primer contrato del empleado →
-        fecha de la versión del contrato.
+        Cascada: inicio del contrato del recibo → inicio del contrato vigente del empleado → fecha de la
+        versión del contrato. En el formulario el empleado se elige antes que el contrato, así que tiene que
+        funcionar sin contrato.
 
         @return date, o False si no hay ninguna fecha cargada.
         """
         self.ensure_one()
         contract = self.contract_id
-        emp = self.employee_id
         return (
-            (contract and (contract.contract_date_start or contract.date_start))
-            or (emp and (emp.contract_date_start or emp.first_contract_date))
-            or (contract and contract.date_version)
+            contract.contract_date_start
+            or self.employee_id.contract_date_start
+            or contract.date_version
             or False
         )
 
