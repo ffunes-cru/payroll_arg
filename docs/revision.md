@@ -335,10 +335,10 @@ gravadas de [C3](#c3).
 **Cantidades con 2 decimales: el SAC proporcional paga de más.** *Media, confirmado (escenario F).*
 
 `hr.payslip.line.quantity` tiene 2 decimales. `SAC_PROP_*` y `SAC_*` usan `result_qty = días / 180`:
-77 / 180 = 0,4278 se guarda como 0,43. La línea paga 517.380 × 0,43 = 222.473,40 en lugar de
-221.323,67 (1.149,73 de más). Las reglas siguientes usan el valor sin redondear: el bruto (`GROSS`) y
-la jubilación se calculan sobre 1.330.123,67, pero *Total Remunerativo* suma la línea y da
-1.331.273,40. Propuesta: pasar la proporción al importe (`result = base × 50% × días / 180`, cantidad =
+77 / 180 = 0,4278 se guarda como 0,43. En el ejercicio 7 la línea paga 496.590 × 0,43 = 213.533,70 en
+lugar de 212.430,17 (1.103,53 de más). Las reglas siguientes usan el valor sin redondear: el bruto
+(`GROSS`) y la jubilación se calculan sobre 1.321.230,17, pero *Total Remunerativo* suma la línea y da
+1.322.333,70. Propuesta: pasar la proporción al importe (`result = base × 50% × días / 180`, cantidad =
 días) o dar más decimales a la cantidad.
 
 ### C24
