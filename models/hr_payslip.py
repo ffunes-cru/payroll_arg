@@ -208,7 +208,7 @@ class HrPayslip(models.Model):
 
     @api.depends("payslip_run_id.payment_date", "date_to")
     def _compute_payment_date(self):
-        """Fecha de pago del recibo (Art. 140 LCT, se imprime en el recibo y va al LSD): la del lote; sin
+        """Fecha de pago del recibo (artículo 140 LCT, se imprime en el recibo y va al LSD): la del lote; sin
         lote, el último día del período. Editable a mano."""
         for slip in self:
             slip.payment_date = slip.payslip_run_id.payment_date or slip.date_to or slip.payment_date
@@ -246,7 +246,7 @@ class HrPayslip(models.Model):
                 slip.ganancias_status = "Exento / No Alcanzado"
 
     def _get_antiguedad_start_date(self):
-        """Fecha desde la que se cuenta la antigüedad (Art. 18 LCT: tiempo de servicio con el empleador).
+        """Fecha desde la que se cuenta la antigüedad (artículo 18 LCT: tiempo de servicio con el empleador).
 
         Cascada: inicio del contrato del recibo → inicio de contrato / primer contrato del empleado →
         fecha de la versión del contrato.
@@ -755,7 +755,7 @@ class HrPayslip(models.Model):
         return round(sum(slips.mapped("total_remunerativo")), 2)
 
     def _get_tope_imponible(self):
-        """Tope imponible (base máxima, Art. 9 Ley 24.241) de los aportes del trabajador en este recibo.
+        """Tope imponible (base máxima, artículo 9 de la Ley 24.241) de los aportes del trabajador en este recibo.
 
         El del recibo si se cargó; si no, el de la compañía, **la mitad** en las quincenas (decisión
         confirmada: cada quincena se topea por separado con medio tope).
@@ -772,7 +772,7 @@ class HrPayslip(models.Model):
         return round(tope / 2.0, 2) if self.tipo_liquidacion in QUINCENA_TYPES else tope
 
     def _get_contrib_coefs(self):
-        """(coef. Seg. Social, coef. Obra Social) del lote o, sin lote, de la compañía.
+        """Coeficientes de contribución (Seguridad Social, Obra Social) del lote o, sin lote, de la compañía.
 
         Multiplican las contribuciones patronales (`result_qty` de las reglas COMP_*): 1 = alícuota
         plena; los recibos de referencia usan 0,10 y 0,15.
@@ -1237,7 +1237,7 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def _to_recibo_dict(self, nro_liq=1, tipo_liq="Mensual"):
-        """Datos del recibo de sueldo (Art. 140 LCT) en el formato de `py_arg_reports` (recibo PDF).
+        """Datos del recibo de sueldo (artículo 140 LCT) en el formato de `py_arg_reports` (recibo PDF).
 
         Incluye empresa y último depósito de Seguridad Social (Art. 140 inc. j), empleado, conceptos
         (cantidad, base e importe por línea), totales y el pie de "Composición salarial": aportes desde

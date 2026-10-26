@@ -6,7 +6,7 @@ from odoo import api, fields, models
 
 
 class HrPayslipRunNovelty(models.Model):
-    """Valor de una novedad fijado para todo el lote (ej. monto de Presentismo, precio
+    """Valor de una novedad fijado para todo el lote (por ejemplo monto de Presentismo, precio
     de la vianda, horas de feriado). Se carga en los recibos al generarlos y con
     "Aplicar"; mientras exista, "Recargar novedades del período" no pisa ese código.
     """

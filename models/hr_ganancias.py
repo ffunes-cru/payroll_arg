@@ -1,5 +1,5 @@
 """@file
-Impuesto a las Ganancias, 4ta categoría (RG 4003): escala del Art. 94 y deducciones personales del
+Impuesto a las Ganancias, 4ta categoría (RG 4003): escala del artículo 94 y deducciones personales del
 Art. 30 LIG por período fiscal, y acumuladores mensuales por empleado que usa el cálculo acumulativo de
 `hr.payslip._calculate_ganancias_from_rules()`.
 """
@@ -89,7 +89,7 @@ class HrGananciasScale(models.Model):
         )
 
     def calculate_annual_bracket(self, net_taxable_accumulated, month):
-        """Calcula el impuesto acumulado aplicando la escala Art. 94 proporcional al mes M (1 a 12).
+        """Calcula el impuesto acumulado aplicando la escala del artículo 94 proporcional al mes M (1 a 12).
         
         Según RG 4003, los tramos de la escala se multiplican por (month / 12.0)
         para determinar la alícuota acumulada correspondiente al período.
@@ -122,7 +122,7 @@ class HrGananciasScale(models.Model):
 
 
 class HrGananciasScaleLine(models.Model):
-    """Tramo de la escala del Art. 94: desde / hasta, cuota fija y alícuota sobre el excedente (anuales).
+    """Tramo de la escala del artículo 94: desde / hasta, cuota fija y alícuota sobre el excedente (anuales).
     `amount_to` = 0 marca el último tramo (sin límite)."""
 
     _name = "hr.ganancias.scale.line"

@@ -91,7 +91,7 @@ HISTORIAL_GANANCIAS_E = 6500000.0
 
 
 def _ref(env, nombre):
-    """Registro de un escenario por su nombre corto (xmlid `payroll_arg_escenarios.<nombre>`).
+    """Registro de un escenario por su nombre corto (xmlid `payroll_arg_escenarios.NOMBRE`).
 
     @param env Entorno de Odoo.
     @param nombre Nombre corto, p. ej. 'emp_a'.

@@ -9,6 +9,7 @@ copyright: Copyright © 2026 Franco Funes · AGPL-3
 docs_dir: docs
 exclude_docs: |
   Doxyfile
+  doxygen-inicio.md
   api/
 
 theme:

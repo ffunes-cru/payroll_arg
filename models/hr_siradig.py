@@ -172,7 +172,7 @@ class HrSiradigF572(models.Model):
 
     @api.depends("cargas_familia_ids", "cargas_familia_ids.parentesco", "cargas_familia_ids.porcentaje_deduccion")
     def _compute_resumen_cargas(self):
-        """Cuenta cónyuge, hijos e hijos incapacitados declarados (Art. 30 inc. b LIG) y arma el
+        """Cuenta cónyuge, hijos e hijos incapacitados declarados (artículo 30, inciso b, LIG) y arma el
         resumen. Cuenta personas: no tiene en cuenta los meses ni el porcentaje de cada carga."""
         for rec in self:
             conyuge = False

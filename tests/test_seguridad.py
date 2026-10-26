@@ -15,7 +15,7 @@ class TestSeguridad(TransactionCase):
     - liquidador: Nómina / Administrador de la compañía A;
     - liquidador_b: Nómina / Administrador de la compañía B.
 
-    @see docs/seguridad.md (qué ve cada perfil), docs/tests.md#probar-permisos (cómo se prueba),
+    @see docs/seguridad.md (qué ve cada perfil), docs/tests.md, sección "Probar permisos" (cómo se prueba),
          https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#record-rules
     """
 

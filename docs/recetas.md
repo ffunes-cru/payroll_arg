@@ -72,6 +72,9 @@ exactamente qué.
 - **Archivo:** empieza con un docstring `@file` que dice qué contiene.
 - **Clase y función:** docstring con **qué hace y por qué**, la regla de negocio y la norma (artículo de
   la LCT, ley, CCT). Las unidades de los importes (pesos, horas, días).
+- **Primera oración:** es el resumen que Doxygen muestra en las listas, y la corta en el primer punto
+  seguido de espacio. Escribirla sin abreviaturas con punto ("artículo 9 de la Ley 24.241", no
+  "Art. 9"; "por ejemplo", no "p. ej."). Desde la segunda oración se puede abreviar.
 - **Parámetros:** `@param` por cada uno; `@return` si devuelve algo; `@throws` para los errores que ve el
   usuario.
 - **Problemas conocidos:** `@bug <id>` con el id de [revisión](revision.md). Doxygen arma la lista de bugs.
@@ -85,7 +88,7 @@ QUINCENA_TYPES = ("1° Quincena", "2° Quincena", "Quincenal")
 
 
 def _get_tope_imponible(self):
-    """Tope imponible (base máxima, Art. 9 Ley 24.241) de los aportes del trabajador en este recibo.
+    """Tope imponible (base máxima, artículo 9 de la Ley 24.241) de los aportes del trabajador en este recibo.
 
     @return Importe en pesos (0 = sin tope).
 
