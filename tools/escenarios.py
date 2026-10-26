@@ -252,7 +252,7 @@ def _cargar_historial_ganancias_e(env):
     siradig = empleado.ganancias_otras_deducciones_mensual
     acumulado_bruto = acumulado_deducciones = retenido = 0.0
     for mes in range(1, 8):
-        escala = env['hr.ganancias.scale'].get_scale_for_date(date(2026, mes, 28))
+        escala = env['hr.ganancias.scale'].get_scale_for_date(date(2026, mes, 28), empleado.company_id)
         acumulado_bruto += HISTORIAL_GANANCIAS_E
         acumulado_deducciones += aportes + siradig
         personales = (escala.deduccion_ganancia_no_imponible + escala.deduccion_especial + escala.deduccion_conyuge

@@ -187,3 +187,36 @@ class TestSeguridad(TransactionCase):
             oficial["afip.labor.category"].browse(categoria.id).action_update_contract_wages()
         self.env(user=self.liquidador)["afip.cct"].browse(self.env.ref("payroll_arg.afip_cct_uom").id).write(
             {"union_rate": 2.5})
+
+    # ── S7: compañías ──
+
+    def test_s7_cada_compania_ve_lo_suyo(self):
+        """El liquidador de una compañía no ve lotes, recibos, novedades, líneas, acumuladores, F.572,
+        valores del lote ni escalas de otra."""
+        datos_a = {
+            "hr.payslip.run": self.lote_a,
+            "hr.payslip": self.lote_a.slip_ids,
+            "hr.payslip.input": self.lote_a.slip_ids.input_line_ids,
+            "hr.payslip.line": self.lote_a.slip_ids.line_ids,
+            "hr.payslip.run.novelty": self.lote_a.novelty_ids,
+            "hr.ganancias.accumulator": self.env["hr.ganancias.accumulator"].search(
+                [("employee_id", "=", self.emp_d1.id)]),
+            "hr.siradig.f572": self.env["hr.siradig.f572"].search([("employee_id", "=", self.emp_d1.id)]),
+            "hr.siradig.deduccion": self.env["hr.siradig.f572"].search(
+                [("employee_id", "=", self.emp_d1.id)]).deduccion_ids,
+            "hr.ganancias.scale": self.env.ref("payroll_arg.scale_ganancias_2026"),
+        }
+        for modelo, registros in datos_a.items():
+            self.assertTrue(registros, modelo)
+            self.assertFalse(self._visible(self.liquidador_b, modelo, registros), modelo)
+            self.assertEqual(self._visible(self.liquidador, modelo, registros), registros, modelo)
+
+    def test_s7_escala_de_ganancias_de_la_compania_del_recibo(self):
+        """Un usuario con las dos compañías calcula cada recibo con la escala de la compañía del recibo."""
+        escala_a = self.env.ref("payroll_arg.scale_ganancias_2026")
+        escala_b = escala_a.copy({"company_id": self.company_b.id, "name": "Escala B"})
+        Scale = self.env(user=self.admin_ambas, context={"allowed_company_ids": [self.company_a.id, self.company_b.id]})[
+            "hr.ganancias.scale"]
+        fecha = escala_a.date_from
+        self.assertEqual(Scale.get_scale_for_date(fecha, self.company_a), escala_a)
+        self.assertEqual(Scale.get_scale_for_date(fecha, self.company_b), escala_b)

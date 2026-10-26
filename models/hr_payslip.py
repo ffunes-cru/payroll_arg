@@ -872,7 +872,7 @@ class HrPayslip(models.Model):
         year = target_date.year
         month = target_date.month
 
-        scale = self.env["hr.ganancias.scale"].get_scale_for_date(target_date)
+        scale = self.env["hr.ganancias.scale"].get_scale_for_date(target_date, self.company_id)
         if not scale:
             return 0.0
 
