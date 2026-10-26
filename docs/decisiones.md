@@ -23,4 +23,4 @@ Cómo se agrega una decisión:
 | D9 | **Seguros de vida**: hay uno de UOM y otro "para todos que lo paga el empleador" (SCVO). Falta confirmar si existe además el UOM patronal (P6). | Respuesta 15/10/2026 | `RET_UOM_VIDA`, `COMP_SCVO`, `COMP_UOM_VIDA` |
 | D10 | **Ajuste anual de Ganancias** del año anterior: el sistema tiene que soportarlo, con su exportación (alcance en P13). | Respuesta 15/10/2026 | C6 |
 | D11 | **No hay datos de producción** todavía: los cambios de esquema no necesitan compatibilidad hacia atrás. | 26/10/2026 | Todo |
-| D12 | **Revisión por PR temático con un commit por hallazgo**, merge sin squash. | 26/10/2026 | Forma de trabajo (`CLAUDE.md`) |
+| D12 | **Revisión por PR temático con un commit por hallazgo**, merge con "Create a merge commit". | 26/10/2026 | Forma de trabajo (`CLAUDE.md`) |

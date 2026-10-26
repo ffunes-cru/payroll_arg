@@ -53,8 +53,9 @@ El repo `odoo/` de afuera no versiona estos addons (aparecen sin seguimiento): n
 
 - **Un PR por tema, un commit por hallazgo.** Cada PR agrupa ids relacionados de `docs/revision.md`
   (p. ej. "Vacaciones: C1, C13, C14, C16") y tiene un commit por id, para revisar commit por commit.
-  Merge con **merge commit o rebase**, nunca squash (se pierde el commit por id y rompe el puntero del
-  submódulo).
+  Merge siempre con **"Create a merge commit"**: conserva los commits (y sus hashes) y el PR queda como una
+  unidad que se puede revertir. Nunca squash ni "Rebase and merge": los dos crean commits nuevos, se
+  pierde el commit por id y se rompe el puntero del submódulo.
 - **Ramas:** `fix/<tema>` desde `main` actualizado. Si un PR depende de otro todavía abierto, se apila
   sobre su rama y se dice en la descripción. Nunca push a `main` ni `--force` sobre ramas ajenas.
 - **No empezar el PR siguiente** sin que el usuario lo pida, salvo que lo haya autorizado para una serie.
