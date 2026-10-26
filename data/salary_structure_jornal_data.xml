@@ -5,26 +5,32 @@
         <!-- CATEGORÍAS DE REGLAS SALARIALES ARGENTINAS               -->
         <!-- ======================================================== -->
         <record id="cat_rem" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">Remunerativo (Haberes con Aporte)</field>
             <field name="code">REM</field>
         </record>
         <record id="cat_norem" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">No Remunerativo (Haberes sin Aporte)</field>
             <field name="code">NOREM</field>
         </record>
         <record id="cat_ret" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">Retenciones y Descuentos de Ley</field>
             <field name="code">DED</field>
         </record>
         <record id="cat_gross" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">Total Bruto</field>
             <field name="code">GROSS</field>
         </record>
         <record id="cat_net" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">Neto a Cobrar</field>
             <field name="code">NET</field>
         </record>
         <record id="cat_comp" model="hr.salary.rule.category">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribuciones Patronales</field>
             <field name="code">COMP</field>
         </record>
@@ -34,6 +40,7 @@
         <!-- ======================================================== -->
         <!-- Regla: Básico Jornal (Horas Normales) -->
         <record id="rule_jornal_basico" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Básico Horas Trabajadas</field>
             <field name="sequence" eval="10"/>
             <field name="code">BASIC_HORAS</field>
@@ -53,6 +60,7 @@ result = contract.wage
 
         <!-- Regla: Feriados Nacionales y Días No Laborables -->
         <record id="rule_jornal_feriado" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Feriados</field>
             <field name="sequence" eval="12"/>
             <field name="code">FERIADO</field>
@@ -75,6 +83,7 @@ result = contract.wage
 
         <!-- Regla: Objetivos -->
         <record id="rule_jornal_objetivos" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Objetivos</field>
             <field name="sequence" eval="25"/>
             <field name="code">OBJETIVOS</field>
@@ -96,6 +105,7 @@ result = inp('OBJETIVOS')
 
         <!-- Regla: Premio Producción -->
         <record id="rule_jornal_premio_produccion" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Premio Producción</field>
             <field name="sequence" eval="26"/>
             <field name="code">PREMIO_PROD</field>
@@ -117,6 +127,7 @@ result = inp('PREMIO_PROD')
 
         <!-- Regla: Presentismo -->
         <record id="rule_jornal_presentismo" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Presentismo</field>
             <field name="sequence" eval="27"/>
             <field name="code">PRESENTISMO</field>
@@ -138,6 +149,7 @@ result = inp('PRESENTISMO')
 
         <!-- Regla: Portítulo -->
         <record id="rule_jornal_portitulo" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Portítulo</field>
             <field name="sequence" eval="28"/>
             <field name="code">PORTITULO</field>
@@ -158,6 +170,7 @@ result = inp('PORTITULO')
 
         <!-- Regla: Horas Extras al 50% -->
         <record id="rule_jornal_hs_ext50" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Horas Extras 50%</field>
             <field name="sequence" eval="20"/>
             <field name="code">HS_EXT_50</field>
@@ -179,6 +192,7 @@ result = contract.wage * 1.5
 
         <!-- Regla: Horas Extras al 100% -->
         <record id="rule_jornal_hs_ext100" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Horas Extras 100%</field>
             <field name="sequence" eval="30"/>
             <field name="code">HS_EXT_100</field>
@@ -201,6 +215,7 @@ result = contract.wage * 2.0
 
         <!-- Regla: Vacaciones Jornal (Art. 155 LCT) -->
         <record id="rule_jornal_vacaciones" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Adelanto Vacaciones</field>
             <field name="sequence" eval="40"/>
             <field name="code">VACACIONES</field>
@@ -227,6 +242,7 @@ result = contract.wage * hours_per_day * 1.20
         <!-- ======================================================== -->
         <!-- Regla: Sueldo Básico Mensual -->
         <record id="rule_mensual_basico" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Sueldo Básico Mensual</field>
             <field name="sequence" eval="10"/>
             <field name="code">BASIC_MENSUAL</field>
@@ -246,6 +262,7 @@ result = contract.wage / 30.0
 
         <!-- Regla: Vacaciones Mensual (Art. 155 LCT - Divisor 25) -->
         <record id="rule_mensual_vacaciones" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Licencia por Vacaciones</field>
             <field name="sequence" eval="15"/>
             <field name="code">VACACIONES_MENSUAL</field>
@@ -269,6 +286,7 @@ result = contract.wage / divisor
 
         <!-- Regla: Adicional Antigüedad (1% anual CCT) -->
         <record id="rule_mensual_antiguedad" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Adicional Antigüedad</field>
             <field name="sequence" eval="20"/>
             <field name="code">ADIC_ANTIG</field>
@@ -297,6 +315,7 @@ result = base
 
         <!-- Regla: Asignación No Remunerativa (Acuerdo UOM / Sumas No Remunerativas) -->
         <record id="rule_jornal_norem_uom" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Asignación No Remunerativa (UOM)</field>
             <field name="sequence" eval="40"/>
             <field name="code">ASIG_NO_REM</field>
@@ -318,6 +337,7 @@ result = inp('ASIG_NO_REM')
 
         <!-- Regla: Gratificación Extraordinaria No Remunerativa -->
         <record id="rule_jornal_gratif_no_rem" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Gratif. Extraordinaria No Rem.</field>
             <field name="sequence" eval="41"/>
             <field name="code">GRATIF_NO_REM</field>
@@ -338,6 +358,7 @@ result = inp('GRATIF_NO_REM')
 
         <!-- Regla: Compensación Extraordinaria No Remunerativa -->
         <record id="rule_jornal_compens_no_rem" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Compens. Extraord. NR</field>
             <field name="sequence" eval="42"/>
             <field name="code">COMPENS_NO_REM</field>
@@ -361,6 +382,7 @@ result = inp('COMPENS_NO_REM')
         <!-- ======================================================== -->
         <!-- Regla: Total Bruto Remunerativo -->
         <record id="rule_jornal_gross" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Total Bruto Remunerativo</field>
             <field name="sequence" eval="100"/>
             <field name="code">GROSS</field>
@@ -376,6 +398,7 @@ result = categories.REM
 
         <!-- Regla: Retención Jubilación 11% (con Tope Imponible) -->
         <record id="rule_jornal_jubilacion" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Jubilación (SIPA 11%)</field>
             <field name="sequence" eval="110"/>
             <field name="code">RET_JUB</field>
@@ -399,6 +422,7 @@ result = - base
 
         <!-- Regla: Retención Ley 19.032 (3%) (con Tope Imponible) -->
         <record id="rule_jornal_inssjp" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Ley 19.032 (INSSJyP 3%)</field>
             <field name="sequence" eval="120"/>
             <field name="code">RET_INSSJP</field>
@@ -421,6 +445,7 @@ result = - base
 
         <!-- Regla: Retención Obra Social (3%) (con Tope Imponible) -->
         <record id="rule_jornal_obra_social" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Obra Social (3%)</field>
             <field name="sequence" eval="130"/>
             <field name="code">RET_OS</field>
@@ -444,6 +469,7 @@ result = - (base_rem + categories.NOREM)
 
         <!-- Regla: Cuota Sindical -->
         <record id="rule_jornal_sindicato" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Cuota Sindical</field>
             <field name="sequence" eval="140"/>
             <field name="code">RET_SIND</field>
@@ -469,6 +495,7 @@ result = - (categories.REM + categories.NOREM)
 
         <!-- Regla: Retención Impuesto a las Ganancias 4ta Categoría -->
         <record id="rule_jornal_ganancias" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Retención Ganancias (4ta Cat.)</field>
             <field name="sequence" eval="150"/>
             <field name="code">RET_GANANCIAS</field>
@@ -489,6 +516,7 @@ result = - abs(round(ret_val, 2)) if ret_val > 0 else 0.0
 
         <!-- Regla: Seguro de Vida UOM (aporte del trabajador, no en 1° Quincena) -->
         <record id="rule_jornal_ret_uom_vida" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Seg. de Vida UOM</field>
             <field name="sequence" eval="155"/>
             <field name="code">RET_UOM_VIDA</field>
@@ -514,6 +542,7 @@ result = - fee
 
         <!-- Regla: Aporte Adicional Seg. Social (Descuento 2da Quincena configurado en el Empleado) -->
         <record id="rule_jornal_aporte_adic_ss" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Aporte Adicional Seg. Social</field>
             <field name="sequence" eval="160"/>
             <field name="code">APORTE_ADIC_SS</field>
@@ -535,6 +564,7 @@ result = - inp('APORTE_ADIC_SS')
 
         <!-- Regla: Descuento de Viandas (Precio de Quincena × Cantidad de Viandas) -->
         <record id="rule_jornal_descuento_viandas" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Descuento Viandas</field>
             <field name="sequence" eval="170"/>
             <field name="code">DESC_VIANDAS</field>
@@ -556,6 +586,7 @@ result = - inp('PRECIO_VIANDA')
 
         <!-- Regla: Neto a Cobrar -->
         <record id="rule_jornal_neto" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Sueldo Neto a Cobrar</field>
             <field name="sequence" eval="200"/>
             <field name="code">NET</field>
@@ -580,6 +611,7 @@ result = categories.REM + categories.NOREM + categories.DED
 
         <!-- 1. Contribución ART (Variable según póliza ART) -->
         <record id="rule_jornal_contribuciones_art" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución ART</field>
             <field name="sequence" eval="300"/>
             <field name="code">COMP_ART</field>
@@ -602,6 +634,7 @@ result = base
 
         <!-- 2. Contribución Jubilación (SIPA sobre Base con Detracción Ley 27.541) -->
         <record id="rule_jornal_contrib_jub" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución Jubilación</field>
             <field name="sequence" eval="310"/>
             <field name="code">COMP_JUB</field>
@@ -627,6 +660,7 @@ result = base
 
         <!-- 3. Contribución Obra Social (Régimen de Obras Sociales Ley 23.660) -->
         <record id="rule_jornal_contribuciones_os" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución Obra Social</field>
             <field name="sequence" eval="320"/>
             <field name="code">COMP_OS</field>
@@ -651,6 +685,7 @@ result = base
 
         <!-- 4. Contribución Asignaciones Familiares AAFF -->
         <record id="rule_jornal_contrib_aaff" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución AAFF</field>
             <field name="sequence" eval="330"/>
             <field name="code">COMP_AAFF</field>
@@ -675,6 +710,7 @@ result = base
 
         <!-- 5. Contribución Fondo Nacional de Empleo FNE -->
         <record id="rule_jornal_contrib_fne" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución FNE</field>
             <field name="sequence" eval="340"/>
             <field name="code">COMP_FNE</field>
@@ -699,6 +735,7 @@ result = base
 
         <!-- 6. Contribución Ley 19.032 INSSJyP (PAMI sobre Base SIPA con Detracción) -->
         <record id="rule_jornal_contrib_inssjp" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución Ley 19032</field>
             <field name="sequence" eval="350"/>
             <field name="code">COMP_INSSJP</field>
@@ -723,6 +760,7 @@ result = base
 
         <!-- 7. Contribución SCVO Seguro Colectivo de Vida Obligatorio -->
         <record id="rule_jornal_contrib_scvo" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contribución SCVO Seg de vida</field>
             <field name="sequence" eval="360"/>
             <field name="code">COMP_SCVO</field>
@@ -742,6 +780,7 @@ result = fee
 
         <!-- 8. Contribución Seguro de Vida y Sepelio CCT UOM (Costo derivado del CCT) -->
         <record id="rule_jornal_contrib_uom_vida" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Contr.Seguro de Vida UOM</field>
             <field name="sequence" eval="370"/>
             <field name="code">COMP_UOM_VIDA</field>
@@ -857,6 +896,7 @@ result = fee
         <!-- ======================================================== -->
         <!-- Regla: SAC Mensual (Ley 23.041) -->
         <record id="rule_sac_mensual" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Sueldo Anual Complementario (SAC)</field>
             <field name="sequence" eval="10"/>
             <field name="code">SAC_MENSUAL</field>
@@ -878,6 +918,7 @@ result = (inp('SAC_BASE') or contract.wage) * 0.50
 
         <!-- Regla: SAC Jornal (Ley 23.041) -->
         <record id="rule_sac_jornal" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Sueldo Anual Complementario (SAC) Jornal</field>
             <field name="sequence" eval="10"/>
             <field name="code">SAC_JORNAL</field>
@@ -905,6 +946,7 @@ result = base_rem * 0.50
         <!-- ======================================================== -->
         <!-- Vacaciones No Gozadas Mensual (Art. 156 LCT) -->
         <record id="rule_final_vac_no_gozadas_mensual" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Vacaciones No Gozadas (Art. 156 LCT)</field>
             <field name="sequence" eval="18"/>
             <field name="code">VAC_NO_GOZ_MENS</field>
@@ -928,6 +970,7 @@ result = contract.wage / divisor
 
         <!-- Vacaciones No Gozadas Jornal (Art. 156 LCT) -->
         <record id="rule_final_vac_no_gozadas_jornal" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Vacaciones No Gozadas Jornal (Art. 156 LCT)</field>
             <field name="sequence" eval="18"/>
             <field name="code">VAC_NO_GOZ_JORNAL</field>
@@ -951,6 +994,7 @@ result = contract.wage * hours_per_day * 1.20
 
         <!-- SAC Proporcional al Egreso Mensual -->
         <record id="rule_final_sac_prop_mensual" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">SAC Proporcional al Egreso</field>
             <field name="sequence" eval="25"/>
             <field name="code">SAC_PROP_MENS</field>
@@ -974,6 +1018,7 @@ result = (inp('SAC_BASE') or contract.wage) * 0.50
 
         <!-- SAC Proporcional al Egreso Jornal -->
         <record id="rule_final_sac_prop_jornal" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">SAC Proporcional al Egreso Jornal</field>
             <field name="sequence" eval="25"/>
             <field name="code">SAC_PROP_JORNAL</field>
@@ -999,6 +1044,7 @@ result = base_rem * 0.50
 
         <!-- Indemnización por Antigüedad (Art. 245 LCT - No Remunerativo) -->
         <record id="rule_final_indem_antiguedad" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Indemnización por Antigüedad (Art. 245 LCT)</field>
             <field name="sequence" eval="50"/>
             <field name="code">INDEM_ANTIGUEDAD</field>
@@ -1020,6 +1066,7 @@ result = inp('INDEM_ANTIG')
 
         <!-- Indemnización Sustitutiva de Preaviso (Art. 232 LCT - No Remunerativo) -->
         <record id="rule_final_preaviso" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Indemnización Sustitutiva Preaviso (Art. 232 LCT)</field>
             <field name="sequence" eval="51"/>
             <field name="code">INDEM_PREAVISO</field>
@@ -1041,6 +1088,7 @@ result = inp('INDEM_PREAV')
 
         <!-- Integración Mes de Despido (Art. 233 LCT - No Remunerativo) -->
         <record id="rule_final_integracion_mes" model="hr.salary.rule">
+            <field name="company_id" eval="False"/>
             <field name="name">Integración Mes de Despido (Art. 233 LCT)</field>
             <field name="sequence" eval="52"/>
             <field name="code">INTEG_MES_DESPIDO</field>
@@ -1342,5 +1390,9 @@ result = inp('INTEG_MES')
                 ref('rule_jornal_contrib_inssjp'),
             ])]"/>
         </record>
+
+        <!-- Reglas y categorías son compartidas (sin compañía); cada compañía tiene su copia de las
+             estructuras. Copia las que falten a las compañías existentes en cada actualización. -->
+        <function model="res.company" name="_payroll_arg_crear_estructuras_todas"/>
     </data>
 </odoo>

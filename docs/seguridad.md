@@ -53,8 +53,11 @@ Un usuario sólo ve los de las compañías que tiene habilitadas.
   en cada una.
 - **Escala de Ganancias:** el recibo usa la de **su** compañía. Cargar la escala en cada compañía (se
   puede duplicar y cambiar la compañía).
-- **Compartido entre compañías:** convenios, categorías, tablas AFIP, estructuras, reglas salariales y
-  calendarios del módulo. Un cambio en una regla o un convenio vale para todas.
+- **Estructuras salariales:** `payroll` (OCA) exige que cada estructura sea de una compañía. Cada compañía
+  recibe su copia de las 8 estructuras argentinas al crearse (y al actualizar el módulo, si faltan). El
+  empleado y el lote toman las de su compañía.
+- **Compartido entre compañías:** reglas salariales y sus categorías, convenios, categorías laborales,
+  tablas AFIP y calendarios del módulo. Un cambio en una regla o un convenio vale para todas.
 - Un liquidador de varias compañías las habilita en su usuario y elige con el selector de compañía en
   cuál trabaja.
 

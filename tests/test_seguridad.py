@@ -79,7 +79,7 @@ class TestSeguridad(TransactionCase):
             "ganancias_otras_deducciones_mensual": 100000.0, "aporte_adicional_ss_monto": 5000.0,
             "contract_date_start": "2020-01-01", "date_version": "2020-01-01", "is_convencionado": False,
             "wage": 3000000.0, "wage_type": "monthly", "schedule_pay": "monthly",
-            "struct_id": ref("payroll_arg.structure_mensual_arg").id,
+            "struct_id": cls.env["hr.version"]._get_default_struct("monthly", company=compania).id,
             "resource_calendar_id": ref("payroll_arg.resource_calendar_mensual_40h").id,
         })
 
@@ -220,3 +220,27 @@ class TestSeguridad(TransactionCase):
         fecha = escala_a.date_from
         self.assertEqual(Scale.get_scale_for_date(fecha, self.company_a), escala_a)
         self.assertEqual(Scale.get_scale_for_date(fecha, self.company_b), escala_b)
+
+    # ── S8: estructuras por compañía ──
+
+    def test_s8_compania_nueva_liquida_con_sus_estructuras(self):
+        """Una compañía nueva recibe su copia de las estructuras argentinas, y su liquidador genera y
+        calcula un lote con sus propios permisos (las reglas salariales son compartidas)."""
+        from ..models.hr_contract import HOURLY_STRUCT_CODES, MONTHLY_STRUCT_CODES
+        estructuras = self.env["hr.payroll.structure"].search([("company_id", "=", self.company_b.id)])
+        self.assertEqual(set(estructuras.mapped("code")), set(HOURLY_STRUCT_CODES + MONTHLY_STRUCT_CODES))
+        self.assertEqual(self.emp_b.struct_id.company_id, self.company_b)
+        env_b = self.env(user=self.liquidador_b, context={"allowed_company_ids": [self.company_b.id]})
+        lote = env_b["hr.payslip.run"].create({
+            "name": "Mensual B (liquidador B)", "tipo_liquidacion": "Mensual", "company_id": self.company_b.id,
+            "date_start": "2026-09-01", "date_end": "2026-09-30",
+        })
+        lote._onchange_tipo_liquidacion()
+        self.assertEqual(lote.struct_id.company_id, self.company_b)
+        contexto = {"active_id": lote.id, "active_model": "hr.payslip.run"}
+        env_b["hr.payslip.employees"].with_context(**contexto).create(
+            {"employee_ids": [(6, 0, self.emp_b.ids)]}).compute_sheet()
+        lote.action_compute_payslips()
+        self.assertEqual(lote.slip_ids.struct_id.company_id, self.company_b)
+        self.assertTrue(lote.slip_ids.line_ids)
+

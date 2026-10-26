@@ -8,6 +8,8 @@ nuevo (ver T8 en docs/revision.md).
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
+from .hr_contract import HOURLY_STRUCT_CODES, MONTHLY_STRUCT_CODES
+
 
 class ResCompany(models.Model):
     """Compañía con CUIT y parámetros de liquidación argentina.
@@ -128,6 +130,41 @@ class ResCompany(models.Model):
         help="Base imponible máxima mensual para el cálculo de aportes del trabajador a la Seguridad Social (Art. 9 Ley 24.241).",
     )
 
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Crea compañías con su copia de las estructuras salariales argentinas.
+
+        @param vals_list Lista de diccionarios de valores.
+        @return Compañías creadas.
+        """
+        companies = super().create(vals_list)
+        companies._payroll_arg_crear_estructuras()
+        return companies
+
+    def _payroll_arg_crear_estructuras(self):
+        """Copia a cada compañía las estructuras argentinas que le falten (por código).
+
+        `payroll` (OCA) exige compañía en la estructura y sólo deja elegir las de la compañía del empleado;
+        las reglas salariales y sus categorías son compartidas. Se llama al crear una compañía y al
+        actualizar el módulo (data/salary_structure_jornal_data.xml), para las compañías que ya existían.
+        """
+        Structure = self.env["hr.payroll.structure"].sudo()
+        codes = HOURLY_STRUCT_CODES + MONTHLY_STRUCT_CODES
+        modelo = Structure.search([("code", "in", codes)], order="id")
+        for company in self:
+            existentes = set(Structure.search([("code", "in", codes), ("company_id", "=", company.id)]).mapped("code"))
+            for code in codes:
+                origen = modelo.filtered(lambda s: s.code == code)[:1]
+                if origen and code not in existentes:
+                    # copy() de OCA agrega "(copy)" al código: se restablece después de copiar
+                    origen.copy({"company_id": company.id}).write({"code": code, "name": origen.name})
+
+    @api.model
+    def _payroll_arg_crear_estructuras_todas(self):
+        """Copia las estructuras argentinas a todas las compañías que no las tienen (lo llama la
+        actualización del módulo desde data/salary_structure_jornal_data.xml)."""
+        self.sudo().search([])._payroll_arg_crear_estructuras()
 
     @api.constrains("cuit")
     def _check_cuit(self):

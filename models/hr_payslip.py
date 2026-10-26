@@ -369,10 +369,11 @@ class HrPayslip(models.Model):
         wage_type = contract.wage_type or "monthly"
         Version = self.env["hr.version"]
         if tipo in SPECIALIZED_RUN_TYPES:
-            specialized = Version._get_default_struct(wage_type, tipo_liquidacion=tipo)
+            specialized = Version._get_default_struct(wage_type, tipo_liquidacion=tipo, company=contract.company_id)
             if specialized:
                 return specialized
-        return struct or contract.struct_id or Version._get_default_struct(wage_type, tipo_liquidacion=tipo)
+        return struct or contract.struct_id or Version._get_default_struct(
+            wage_type, tipo_liquidacion=tipo, company=contract.company_id)
 
     @api.model_create_multi
     def create(self, vals_list):
