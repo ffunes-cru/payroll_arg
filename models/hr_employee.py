@@ -205,13 +205,13 @@ class HrEmployee(models.Model):
         if self.resource_calendar_id:
             cal = self.resource_calendar_id
             name = (cal.name or "").lower()
-            if "jornal" in name or "fábrica" in name or "fabrica" in name or cal.full_time_required_hours == 44:
+            if "jornal" in name or "fábrica" in name or "fabrica" in name or cal.hours_per_week == 44:
                 self.wage_type = "hourly"
                 self.schedule_pay = "bi-weekly"
                 struct = self._get_default_struct("hourly")
                 if struct:
                     self.struct_id = struct
-            elif "mensual" in name or "admin" in name or cal.full_time_required_hours in (40, 48):
+            elif "mensual" in name or "admin" in name or cal.hours_per_week in (40, 48):
                 self.wage_type = "monthly"
                 self.schedule_pay = "monthly"
                 struct = self._get_default_struct("monthly")

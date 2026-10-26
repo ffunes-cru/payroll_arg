@@ -1,9 +1,15 @@
-import calendar
 from datetime import datetime
-from odoo import fields, models, api
+
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from .hr_contract import DIAS_BASE_MENSUAL_LCT
+
+EDITABLE_SLIP_STATES = ("draft", "verify")
+# Novedades en horas / días / unidades; el resto son importes en pesos
+QUANTITY_INPUT_CODES = (
+    "HS_NORM", "HS_EXT50", "HS_EXT100", "FERIADO", "VAC_DIAS", "CANT_VIANDAS", "SAC_DIAS", "VAC_NO_GOZ",
+)
 
 
 class HrPayslipRun(models.Model):
@@ -25,18 +31,6 @@ class HrPayslipRun(models.Model):
         required=True,
         help="Tipo de liquidación informado a la AFIP / ARCA en el Libro de Sueldos Digital",
     )
-    has_hourly_payslips = fields.Boolean(
-        string="Tiene Jornalizados",
-        compute="_compute_has_hourly_payslips",
-        store=True,
-        help="Indica si el lote contiene al menos un recibo de empleado jornalizado.",
-    )
-    is_quincenal = fields.Boolean(
-        string="Es Liquidación Quincenal",
-        compute="_compute_is_quincenal",
-        store=True,
-        help="Indica si el tipo de liquidación es quincenal (1° Quincena, 2° Quincena, Quincenal).",
-    )
     afip_nro_liquidacion = fields.Integer(
         string="N° de Liquidación en el Mes",
         default=1,
@@ -55,66 +49,137 @@ class HrPayslipRun(models.Model):
         string="Payslips",
         readonly=False,
     )
-
-    # ──────────────────────────────────────────────
-    # Novedades Variables de la Quincena
-    # ──────────────────────────────────────────────
-    monto_premio_produccion = fields.Float(
-        string="Monto Premio Producción ($)",
-        default=0.0,
-        help="Monto fijo de Premio Producción para esta quincena. "
-             "Se aplica a los empleados marcados con el toggle 'Premio Prod.' en la tabla de recibos.",
+    novelty_ids = fields.One2many(
+        "hr.payslip.run.novelty",
+        "run_id",
+        string="Valores del Lote",
+        help="Novedades con el mismo valor para todo el lote. Se cargan al generar los recibos "
+             "o con el botón Aplicar de cada línea.",
     )
-    monto_presentismo = fields.Float(
-        string="Monto Presentismo ($)",
-        default=0.0,
-        help="Monto fijo de Presentismo para esta quincena. "
-             "Se aplica a los empleados marcados con el toggle 'Presentismo' en la tabla de recibos.",
+    input_qty_line_ids = fields.One2many(
+        "hr.payslip.input",
+        "payslip_run_id",
+        string="Horas, Días y Cantidades",
+        domain=[("code", "in", QUANTITY_INPUT_CODES)],
     )
-    monto_portitulo = fields.Float(
-        string="Monto Portítulo ($)",
-        default=0.0,
-        help="Monto fijo de Portítulo para esta quincena. "
-             "Se aplica a los empleados marcados con el toggle 'Portítulo' en la tabla de recibos.",
-    )
-    cant_feriados = fields.Float(
-        string="Feriados (Hs)",
-        default=0.0,
-        help="Cantidad de horas de feriado en la quincena para el lote. "
-             "Se propaga por defecto a los recibos que no tengan override manual.",
-    )
-    monto_gratif_no_rem = fields.Float(
-        string="Monto Gratif. Extraord. NR ($)",
-        default=0.0,
-        help="Monto de la Gratificación Extraordinaria No Remunerativa para esta quincena. "
-             "Se aplica a los recibos de la 2da quincena con el concepto activo.",
-    )
-    monto_compens_no_rem = fields.Float(
-        string="Monto Compens. Extraord. NR ($)",
-        default=0.0,
-        help="Monto de la Compensación Extraordinaria No Remunerativa para esta quincena. "
-             "Se aplica a los recibos de la 2da quincena con el concepto activo.",
-    )
-    precio_vianda = fields.Float(
-        string="Precio Vianda ($)",
-        default=0.0,
-        digits=(16, 2),
-        help="Precio unitario de cada vianda en esta quincena. Se utiliza para calcular el descuento de viandas.",
+    input_amount_line_ids = fields.One2many(
+        "hr.payslip.input",
+        "payslip_run_id",
+        string="Importes ($)",
+        domain=[("code", "not in", QUANTITY_INPUT_CODES)],
     )
     coef_contrib_ss = fields.Float(
         string="Coef. Contrib. Seg. Social",
         default=lambda self: self.env.company.coef_contrib_ss,
         digits=(16, 4),
-        help="Coeficiente sobre Jubilación, Ley 19.032, AAFF y FNE patronales. "
-             "Se toma de la compañía y se propaga a los recibos del lote.",
+        help="Coeficiente sobre Jubilación, Ley 19.032, AAFF y FNE patronales de los recibos del lote.",
     )
     coef_contrib_os = fields.Float(
         string="Coef. Contrib. Obra Social",
         default=lambda self: self.env.company.coef_contrib_os,
         digits=(16, 4),
-        help="Coeficiente sobre la contribución patronal de Obra Social. "
-             "Se toma de la compañía y se propaga a los recibos del lote.",
+        help="Coeficiente sobre la contribución patronal de Obra Social de los recibos del lote.",
     )
+
+    def _get_novelty_amounts(self):
+        """{código: valor} de las novedades fijadas en el lote."""
+        return {n.code: n.amount for n in self.novelty_ids if n.code}
+
+    def _get_editable_slips(self):
+        slips = self.slip_ids.filtered(lambda s: s.state in EDITABLE_SLIP_STATES)
+        if not slips:
+            raise UserError("No hay recibos en borrador o en espera en este lote.")
+        return slips
+
+    # ══════════════════════════════════════════════
+    # ONCHANGES / CRUD
+    # ══════════════════════════════════════════════
+
+    @api.onchange("tipo_liquidacion")
+    def _onchange_tipo_liquidacion(self):
+        """Sugiere estructura y N° de liquidación según el tipo. Las fechas las define el usuario."""
+        Version = self.env["hr.version"]
+        tipo = self.tipo_liquidacion
+        if tipo in ("1° Quincena", "Mensual"):
+            self.afip_nro_liquidacion = 1
+        elif tipo == "2° Quincena":
+            self.afip_nro_liquidacion = 2
+
+        if tipo in ("1° Quincena", "2° Quincena", "Quincenal"):
+            self.struct_id = Version._get_default_struct("hourly", tipo_liquidacion=tipo)
+        elif tipo == "Mensual":
+            self.struct_id = Version._get_default_struct("monthly", tipo_liquidacion=tipo)
+        else:
+            # Vacaciones / SAC / Liquidación Final: cada recibo resuelve la estructura
+            # especializada según el tipo de salario de su contrato.
+            self.struct_id = False
+
+        if self.date_end:
+            self.payment_date = self.date_end
+
+    @api.onchange("date_start", "date_end")
+    def _onchange_dates(self):
+        if self.date_end:
+            self.payment_date = self.date_end
+        if self.date_start and self.date_end and self.date_start > self.date_end:
+            return {
+                "warning": {
+                    "title": "Inconsistencia de Fechas",
+                    "message": "La fecha de inicio no puede ser posterior a la fecha de fin.",
+                }
+            }
+
+    def write(self, vals):
+        res = super().write(vals)
+        slip_vals = {}
+        if "date_start" in vals:
+            slip_vals["date_from"] = vals["date_start"]
+        if "date_end" in vals:
+            slip_vals["date_to"] = vals["date_end"]
+        if slip_vals:
+            self.slip_ids.filtered(lambda s: s.state in EDITABLE_SLIP_STATES).write(slip_vals)
+        return res
+
+    # ══════════════════════════════════════════════
+    # ACCIONES
+    # ══════════════════════════════════════════════
+
+    def action_reload_period_inputs(self):
+        """Relee calendario, licencias, asistencias y ficha del empleado en todos los recibos."""
+        self.ensure_one()
+        self._get_editable_slips().action_reload_period_inputs()
+        return True
+
+    def action_compute_payslips(self):
+        self.ensure_one()
+        self._get_editable_slips().compute_sheet()
+        return True
+
+    def action_confirm_payslips(self):
+        """Confirma todos los recibos del lote en estado borrador o en espera."""
+        self.ensure_one()
+        for slip in self._get_editable_slips():
+            # action_payslip_done de OCA no es multi-registro (lee prevent_compute_on_confirm)
+            slip.action_payslip_done()
+        return True
+
+    def close_payslip_run(self):
+        """Al cerrar el lote, confirma los recibos pendientes y pasa el lote a 'close'."""
+        for slip in self.slip_ids.filtered(lambda s: s.state in EDITABLE_SLIP_STATES):
+            slip.action_payslip_done()
+        return super().close_payslip_run()
+
+    def action_open_input_import(self):
+        self.ensure_one()
+        return {
+            "name": "Importar Novedades (CSV)",
+            "type": "ir.actions.act_window",
+            "res_model": "hr.payslip.run.input.import",
+            "view_mode": "form",
+            "views": [[False, "form"]],
+            "target": "new",
+            "context": {"default_payslip_run_id": self.id},
+        }
 
     def action_open_export_wizard(self):
         self.ensure_one()
@@ -128,200 +193,9 @@ class HrPayslipRun(models.Model):
             "context": {"default_payslip_run_id": self.id},
         }
 
-    @api.depends("slip_ids", "slip_ids.contract_id", "tipo_liquidacion")
-    def _compute_has_hourly_payslips(self):
-        hourly_types = ("1° Quincena", "2° Quincena", "Quincenal")
-        for run in self:
-            is_quincenal = run.tipo_liquidacion in hourly_types
-            has_hourly_slip = any(
-                slip.contract_id.wage_type == "hourly"
-                for slip in run.slip_ids
-                if slip.contract_id
-            )
-            if run.tipo_liquidacion == "Mensual":
-                run.has_hourly_payslips = False
-            elif is_quincenal:
-                run.has_hourly_payslips = True
-            else:
-                run.has_hourly_payslips = has_hourly_slip
-
-    @api.depends("tipo_liquidacion")
-    def _compute_is_quincenal(self):
-        hourly_types = ("1° Quincena", "2° Quincena", "Quincenal")
-        for run in self:
-            run.is_quincenal = bool(
-                run.tipo_liquidacion and (
-                    run.tipo_liquidacion in hourly_types or "Quincena" in run.tipo_liquidacion
-                )
-            )
-
-    @api.onchange("tipo_liquidacion")
-    def _onchange_tipo_liquidacion(self):
-        """Sugiere la estructura salarial según el tipo de liquidación.
-        Las fechas del período NO se tocan: las define el usuario."""
-        if self.tipo_liquidacion == "1° Quincena":
-            self.afip_nro_liquidacion = 1
-            self.struct_id = self.env["hr.version"]._get_default_struct("hourly", tipo_liquidacion=self.tipo_liquidacion)
-        elif self.tipo_liquidacion == "2° Quincena":
-            self.afip_nro_liquidacion = 2
-            self.struct_id = self.env["hr.version"]._get_default_struct("hourly", tipo_liquidacion=self.tipo_liquidacion)
-        elif self.tipo_liquidacion == "Quincenal":
-            self.struct_id = self.env["hr.version"]._get_default_struct("hourly", tipo_liquidacion=self.tipo_liquidacion)
-        elif self.tipo_liquidacion == "Mensual":
-            self.afip_nro_liquidacion = 1
-            self.struct_id = self.env["hr.version"]._get_default_struct("monthly", tipo_liquidacion=self.tipo_liquidacion)
-        elif self.tipo_liquidacion in ("Vacaciones", "SAC", "Liquidación Final"):
-            if self.slip_ids:
-                all_hourly = all(s.contract_id.wage_type == "hourly" for s in self.slip_ids if s.contract_id)
-                all_monthly = all(s.contract_id.wage_type == "monthly" for s in self.slip_ids if s.contract_id)
-                if all_hourly:
-                    self.struct_id = self.env["hr.version"]._get_default_struct("hourly", tipo_liquidacion=self.tipo_liquidacion)
-                elif all_monthly:
-                    self.struct_id = self.env["hr.version"]._get_default_struct("monthly", tipo_liquidacion=self.tipo_liquidacion)
-                else:
-                    self.struct_id = False
-            else:
-                self.struct_id = False
-
-        if self.date_end:
-            self.payment_date = self.date_end
-
-    @api.onchange("date_end")
-    def _onchange_date_end(self):
-        if self.date_end:
-            self.payment_date = self.date_end
-
-    def action_open_hours_wizard(self):
-        self.ensure_one()
-        if not self.slip_ids:
-            raise UserError(
-                "El lote no tiene recibos generados todavía.\n\n"
-                "1. Primero presione 'Generar Recibos' para seleccionar los empleados.\n"
-                "2. Luego ingrese a 'Carga Masiva de Horas' para cargar las novedades de la quincena."
-            )
-        hourly_slips = self.slip_ids.filtered(
-            lambda s: s.contract_id and s.contract_id.wage_type == "hourly"
-        )
-        if not hourly_slips:
-            raise UserError(
-                "El lote no contiene recibos de operarios jornalizados (con contrato por hora).\n\n"
-                "Verifique que los empleados seleccionados tengan contratos con tipo de salario 'Por hora'."
-            )
-        return {
-            "name": "Carga Masiva de Horas - Jornales Quincenales",
-            "type": "ir.actions.act_window",
-            "res_model": "hr.payslip.run.hours.wizard",
-            "view_mode": "form",
-            "views": [[False, "form"]],
-            "target": "new",
-            "context": {"default_payslip_run_id": self.id},
-        }
-
-    def action_apply_run_variables(self):
-        """Aplica novedades y recalcula automáticamente los recibos del lote."""
-        return self.action_compute_payslips()
-
-    def action_sync_attendance_hours(self):
-        """Sincroniza masivamente las asistencias reales de todos los recibos del lote."""
-        self.ensure_one()
-        slips = self.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
-        if not slips:
-            raise UserError("No hay recibos pendientes de confirmación en este lote.")
-        count = 0
-        for slip in slips:
-            if hasattr(slip, "action_sync_attendance_hours"):
-                slip.action_sync_attendance_hours()
-            slip.compute_sheet()
-            count += 1
-        self.invalidate_recordset(["slip_ids"])
-        return True
-
-    @api.onchange("date_start", "date_end")
-    def _onchange_dates(self):
-        """Propaga automáticamente el cambio de período a los recibos y valida que fecha inicio <= fecha fin."""
-        warning = None
-        if self.date_start and self.date_end:
-            if self.date_start > self.date_end:
-                warning = {
-                    "title": "Inconsistencia de Fechas",
-                    "message": "La fecha de inicio no puede ser posterior a la fecha de fin.",
-                }
-            if self.slip_ids:
-                for slip in self.slip_ids.filtered(lambda s: s.state in ("draft", "verify")):
-                    slip.date_from = self.date_start
-                    slip.date_to = self.date_end
-
-        if warning:
-            return {"warning": warning}
-
-    def write(self, vals):
-        res = super().write(vals)
-        if any(k in vals for k in ("date_start", "date_end", "cant_feriados", "monto_gratif_no_rem", "monto_compens_no_rem", "coef_contrib_ss", "coef_contrib_os", "precio_vianda")):
-            for run in self:
-                slips_to_update = run.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
-                slip_vals = {}
-                if "date_start" in vals:
-                    slip_vals["date_from"] = vals["date_start"]
-                if "date_end" in vals:
-                    slip_vals["date_to"] = vals["date_end"]
-                if slip_vals and slips_to_update:
-                    slips_to_update.write(slip_vals)
-                    for slip in slips_to_update:
-                        slip._sync_liquidation_summary()
-
-                if "cant_feriados" in vals:
-                    fer_slips = slips_to_update.filtered(lambda s: not s.feriados_manual)
-                    if fer_slips:
-                        fer_slips.write({"cant_feriados": vals["cant_feriados"]})
-
-                if "monto_gratif_no_rem" in vals:
-                    gratif_slips = slips_to_update.filtered(lambda s: not s.gratif_no_rem_manual)
-                    if gratif_slips:
-                        gratif_slips.write({"monto_gratif_no_rem": vals["monto_gratif_no_rem"]})
-
-                if "monto_compens_no_rem" in vals:
-                    comp_slips = slips_to_update.filtered(lambda s: not s.compens_no_rem_manual)
-                    if comp_slips:
-                        comp_slips.write({"monto_compens_no_rem": vals["monto_compens_no_rem"]})
-
-                if "precio_vianda" in vals:
-                    slips_to_update.write({"precio_vianda": vals["precio_vianda"]})
-
-                if "coef_contrib_ss" in vals:
-                    slips_to_update.write({"coef_contrib_ss": vals["coef_contrib_ss"]})
-
-                if "coef_contrib_os" in vals:
-                    slips_to_update.write({"coef_contrib_os": vals["coef_contrib_os"]})
-        return res
-
-    def action_confirm_payslips(self):
-        """Confirma todos los recibos del lote en estado borrador o en espera."""
-        self.ensure_one()
-        slips = self.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
-        if not slips:
-            raise UserError("No hay recibos pendientes de confirmación en este lote.")
-        for slip in slips:
-            slip.action_payslip_done()
-        return True
-
-    def close_payslip_run(self):
-        """Al cerrar el lote, confirma los recibos pendientes y pasa el lote a 'close'."""
-        for run in self:
-            slips_to_confirm = run.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
-            if slips_to_confirm:
-                for slip in slips_to_confirm:
-                    slip.action_payslip_done()
-        return super().close_payslip_run()
-
-    def action_compute_payslips(self):
-        self.ensure_one()
-        slips = self.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
-        if not slips:
-            raise UserError("No hay recibos pendientes de confirmación en este lote.")
-        for slip in slips:
-            slip.compute_sheet()
-        self.invalidate_recordset(["slip_ids"])
-        return True
+    # ══════════════════════════════════════════════
+    # EXPORTACIONES
+    # ══════════════════════════════════════════════
 
     def _prepare_lsd_payload(self):
         self.ensure_one()
@@ -329,7 +203,6 @@ class HrPayslipRun(models.Model):
         if not slips:
             raise UserError("No hay recibos calculados o en estado Verificado/Hecho en este lote.")
 
-        # F7.3: Validación pre-export
         self._validate_slips_for_export(slips)
 
         company = self.company_id
@@ -350,7 +223,7 @@ class HrPayslipRun(models.Model):
                 }
             )
 
-        payload = {
+        return {
             "periodo": str(periodo_date),
             "empresa": company.name,
             "cuit": cuit,
@@ -366,10 +239,9 @@ class HrPayslipRun(models.Model):
                 }
             ],
         }
-        return payload
 
     def _validate_slips_for_export(self, slips):
-        """Valida que todos los recibos tengan datos requeridos antes de exportar (F7.3)."""
+        """Valida que todos los recibos tengan datos requeridos antes de exportar."""
         errors = []
         for slip in slips:
             emp_name = slip.employee_id.name or f"ID:{slip.employee_id.id}"
@@ -377,8 +249,8 @@ class HrPayslipRun(models.Model):
                 errors.append(f"{emp_name}: falta CUIL")
             if not slip.contract_id:
                 errors.append(f"{emp_name}: falta contrato activo")
-            if not slip.neto_liquidacion and slip.neto_liquidacion != 0:
-                errors.append(f"{emp_name}: neto no calculado — ¿se computó el recibo?")
+            if not slip.line_ids:
+                errors.append(f"{emp_name}: recibo sin calcular")
         if errors:
             raise UserError(
                 "Datos incompletos para exportar. Corrija antes de continuar:\n\n"

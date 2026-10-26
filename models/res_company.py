@@ -103,6 +103,12 @@ class ResCompany(models.Model):
         default=8045.65,
         help="Cuota fija mensual patronal para el Seguro de Vida y Sepelio CCT UOM 260/75. Se liquida en la 2° Quincena o liquidaciones mensuales.",
     )
+    uom_life_insurance_employee_fee = fields.Float(
+        string="Seguro de Vida UOM Trabajador ($)",
+        default=8045.65,
+        help="Aporte fijo mensual del trabajador al Seguro de Vida y Sepelio CCT UOM 260/75. "
+             "Se descuenta en la 2° Quincena o liquidaciones mensuales.",
+    )
     tope_imponible_max_retencion = fields.Float(
         string="Tope Imponible Máximo Retenciones ($)",
         default=4250000.0,
