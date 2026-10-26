@@ -11,7 +11,7 @@ Liquidación de sueldos argentina sobre el módulo `payroll` de OCA:
 - **Exportaciones:** recibo PDF, Libro de Sueldos Digital, F.931 (SICOSS), acreditaciones Galicia y
   Santander (librería `py_arg_reports`, submódulo `payroll_arg_reportes`).
 
-**Licencia:** LGPL-3 ·
+**Autor:** Franco Funes · **Licencia:** [AGPL-3](LICENSE) ·
 **Depende de:** `payroll` (OCA), `hr_holidays`, `resource`, `web_widget_x2many_2d_matrix` ·
 **Complemento:** `payroll_arg_attendance` (horas desde fichadas).
 
@@ -56,3 +56,13 @@ git clone --recurse-submodules <url> addons/payroll_arg
 
 Después de instalar: completar los parámetros de la compañía, convenios, categorías, feriados y la
 escala de Ganancias (ver [Operación](docs/operacion.md#puesta-en-marcha)).
+
+## Licencia
+
+Copyright © 2026 Franco Funes. Software libre bajo la [GNU Affero General Public License v3](LICENSE): se
+puede usar, estudiar, modificar y redistribuir; las versiones modificadas, incluso las que se ofrecen como
+servicio web, tienen que publicar su código con la misma licencia.
+
+La librería `py_arg_reports` (submódulo `payroll_arg_reportes`) es de Artimezoft, bajo licencia MIT
+(ver su `LICENSE`); la MIT es compatible con la AGPL.
+

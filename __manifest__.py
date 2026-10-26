@@ -3,8 +3,8 @@
     "version": "19.0.2.0.0",
     "category": "Payroll",
     "summary": "Gestión de nómina argentina: jornales, quincenales, Libro de Sueldos Digital, Recibos PDF y Acreditaciones Bancarias",
-    "author": "Artimezoft / Antigravity",
-    "license": "LGPL-3",
+    "author": "Franco Funes",
+    "license": "AGPL-3",
     "depends": [
         "payroll",
         "hr_holidays",
