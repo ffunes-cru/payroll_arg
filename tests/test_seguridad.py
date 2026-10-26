@@ -128,3 +128,19 @@ class TestSeguridad(TransactionCase):
         for usuario in (self.interno, self.rrhh):
             self.assertNotIn(menu.id, self.env(user=usuario)["ir.ui.menu"]._visible_menu_ids(), usuario.login)
         self.assertIn(menu.id, self.env(user=self.oficial)["ir.ui.menu"]._visible_menu_ids())
+
+    # ── S2: datos sensibles del empleado ──
+
+    def test_s2_rrhh_ve_cuil_pero_no_cbu_ni_ganancias(self):
+        """RR. HH. lee el CUIL; el CBU, las cargas y deducciones de Ganancias, el aporte adicional y el
+        F.572 son sólo de nómina. El formulario del empleado abre sin esos campos."""
+        empleado = self.env(user=self.rrhh)["hr.employee"].browse(self.emp_d1.id)
+        self.assertEqual(empleado.cuil, "20301112220")
+        for campo in ("cbu", "ganancias_hijos", "ganancias_otras_deducciones_mensual", "aporte_adicional_ss_monto",
+                      "siradig_count"):
+            with self.assertRaises(AccessError, msg=campo):
+                empleado.read([campo])
+        arch = self.env(user=self.rrhh)["hr.employee"].get_view(self.env.ref("hr.view_employee_form").id)["arch"]
+        self.assertNotIn("siradig", arch)
+        self.assertNotIn("ganancias_", arch)
+        self.assertEqual(self.env(user=self.oficial)["hr.employee"].browse(self.emp_d1.id).cbu, "0110000330000000000000")

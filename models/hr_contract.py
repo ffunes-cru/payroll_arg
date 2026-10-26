@@ -72,6 +72,7 @@ class HrContract(models.Model):
         string="Aporte Adicional Seg. Social ($)",
         related="employee_id.aporte_adicional_ss_monto",
         readonly=False,
+        groups="payroll.group_payroll_user",
         help="Monto fijo en pesos a descontar de la liquidación en la 2da quincena como Aporte Adicional de Seguridad Social.",
     )
 
