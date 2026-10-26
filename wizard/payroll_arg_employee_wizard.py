@@ -104,7 +104,7 @@ class PayrollArgEmployeeWizard(models.TransientModel):
                 (
                     "1001",
                     "Pérez Juan Carlos",
-                    "20-33445566-9",
+                    "20-33445566-2",
                     "Jornalizado",
                     "260/75",
                     "OF",
@@ -118,7 +118,7 @@ class PayrollArgEmployeeWizard(models.TransientModel):
                 (
                     "2001",
                     "Gómez Marcos Antonio",
-                    "20-28112233-4",
+                    "20-28112233-9",
                     "Mensualizado",
                     "260/75",
                     "ADM1",

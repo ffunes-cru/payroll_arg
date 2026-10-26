@@ -92,3 +92,16 @@ class TestGuiaUsuario(TransactionCase):
         self.assertIn("Guía Sin Contrato", str(error.exception))
         self.assertIn("Fecha de inicio del contrato", str(error.exception))
         self.assertFalse(lote.slip_ids)
+
+    # ── G3: plantilla de alta masiva ──
+
+    def test_g3_plantilla_de_empleados_se_importa(self):
+        """La plantilla de alta masiva (sección 3.2) se puede importar tal cual: sus CUIL de ejemplo son
+        válidos."""
+        exportar = self.env["payroll.arg.employee.wizard"].create({"operation_mode": "export", "export_type": "template"})
+        exportar.action_export_excel()
+        importar = self.env["payroll.arg.employee.wizard"].create({
+            "operation_mode": "import", "data_file": exportar.export_file, "filename": "plantilla.xlsx"})
+        importar.action_import_file()
+        self.assertIn("Empleados Creados: 2", importar.result_summary)
+        self.assertNotIn("Errores", importar.result_summary)
