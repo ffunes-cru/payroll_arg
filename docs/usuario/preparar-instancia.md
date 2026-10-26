@@ -43,10 +43,12 @@ Crear un usuario interno con:
 
 | Aplicación | Permiso |
 |---|---|
-| Haberes (Payroll) | Administrador |
-| Empleados | Administrador |
+| Haberes (Payroll) | **Administrador** (el oficial no puede usar lotes) |
+| Empleados | Administrador (lo da Haberes) |
 | Ausencias | Administrador (para aprobar licencias) |
 | Asistencias | Administrador (si va a probar fichadas) |
+
+Para comprobar los permisos de los demás perfiles (otra área, RR. HH.), ver [Seguridad](../seguridad.md).
 
 ## 4. Copia limpia para empezar de nuevo
 

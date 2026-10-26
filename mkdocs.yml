@@ -67,6 +67,7 @@ nav:
       - Arquitectura: arquitectura.md
       - Conceptos de Odoo: odoo.md
       - Recetas: recetas.md
+      - Seguridad: seguridad.md
       - Referencia generada: referencia.md
   - Revisión:
       - Revisión de código y legal: revision.md

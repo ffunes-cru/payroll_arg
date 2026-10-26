@@ -24,3 +24,6 @@ Cómo se agrega una decisión:
 | D10 | **Ajuste anual de Ganancias** del año anterior: el sistema tiene que soportarlo, con su exportación (alcance en P13). | Respuesta 15/10/2026 | C6 |
 | D11 | **No hay datos de producción** todavía: los cambios de esquema no necesitan compatibilidad hacia atrás. | 26/10/2026 | Todo |
 | D12 | **Revisión por PR temático con un commit por hallazgo**, merge con "Create a merge commit". | 26/10/2026 | Forma de trabajo (`CLAUDE.md`) |
+| D13 | **Datos sensibles del empleado:** el CUIL lo ve RR. HH.; el CBU, las cargas y deducciones de Ganancias, el aporte adicional y el F.572, sólo nómina. | 26/10/2026 | `hr.employee` (S2) |
+| D14 | **Roles de nómina como los define OCA:** el liquidador es *Haberes: Administrador* (OCA sólo deja usar lotes a ese grupo) y cualquier permiso de nómina implica *Empleados: Administrador*. La separación entre liquidadores es por compañía. | 26/10/2026 | `docs/seguridad.md` (S4, S5) |
+| D15 | **Preparado para varias compañías:** todo dato de nómina se separa por compañía; cada compañía tiene sus parámetros y su escala de Ganancias. | 26/10/2026 | Reglas multi-compañía (S7) |

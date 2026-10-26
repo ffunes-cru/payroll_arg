@@ -15,7 +15,10 @@
 5. **Tipo de licencia de vacaciones**: usar *Licencia por Vacaciones (LCT)* para que se detecten.
 6. **Ganancias**: cargar la escala vigente de ARCA (la de 2026 que trae el módulo es de ejemplo, ver C5)
    e importar los F.572.
-7. **Empleados**: alta a mano o con *Importar / Exportar Empleados* (plantilla Excel). Cada contrato
+7. **Usuarios**: el liquidador lleva *Haberes: Administrador*. RR. HH. y el resto, sin permisos de
+   Haberes (ver [Seguridad](seguridad.md)). Con varias compañías, completar los parámetros y la escala
+   de Ganancias en cada una.
+8. **Empleados**: alta a mano o con *Importar / Exportar Empleados* (plantilla Excel). Cada contrato
    necesita tipo de salario, básico, estructura, calendario, CCT, categoría y códigos AFIP.
 
 ## Parámetros de la compañía

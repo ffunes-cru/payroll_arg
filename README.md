@@ -34,6 +34,7 @@ Leer en este orden. Los diagramas son [Mermaid](https://mermaid.js.org/): GitHub
 | [Arquitectura](docs/arquitectura.md) | Qué hace cada archivo, cómo se calcula un recibo, decisiones de diseño y puntos de extensión. |
 | [Conceptos de Odoo](docs/odoo.md) | Las piezas de Odoo y de `payroll` (OCA) que usa el módulo. |
 | [Operación](docs/operacion.md) | Puesta en marcha, parámetros de la compañía, importar novedades, comandos y problemas comunes. |
+| [Seguridad](docs/seguridad.md) | Qué permiso darle a cada persona, qué ve cada perfil y cómo funciona con varias compañías. |
 | [Recetas](docs/recetas.md) | Agregar un concepto, una novedad o un parámetro, cambiar una fórmula y cómo documentar el código. |
 | [Revisión](docs/revision.md) | Revisión de código y legal: errores de cálculo, exportaciones y usabilidad, con gravedad y propuesta. |
 | [Decisiones](docs/decisiones.md) | Decisiones de negocio confirmadas (D1, D2…). |

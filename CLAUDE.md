@@ -56,8 +56,11 @@ El repo `odoo/` de afuera no versiona estos addons (aparecen sin seguimiento): n
   Merge siempre con **"Create a merge commit"**: conserva los commits (y sus hashes) y el PR queda como una
   unidad que se puede revertir. Nunca squash ni "Rebase and merge": los dos crean commits nuevos, se
   pierde el commit por id y se rompe el puntero del submódulo.
-- **Ramas:** `fix/<tema>` desde `main` actualizado. Si un PR depende de otro todavía abierto, se apila
-  sobre su rama y se dice en la descripción. Nunca push a `main` ni `--force` sobre ramas ajenas.
+- **Ramas:** `fix/<tema>` desde `main` actualizado y PR contra `main`. Evitar apilar PR. Si uno tiene que
+  depender de otro todavía abierto, se apila sobre su rama, se dice en la descripción y, apenas se
+  mergea el de abajo, se cambia la base del de arriba a `main` (`gh pr edit <N> --base main`) antes de
+  pedir que se mergee (si no, se mergea contra la rama vieja). Nunca push a `main` ni `--force` sobre
+  ramas ajenas.
 - **No empezar el PR siguiente** sin que el usuario lo pida, salvo que lo haya autorizado para una serie.
 - **Commits:** Conventional Commits en inglés con el id: `fix(payroll_arg): C1 do not pay vacations already
   paid in a vacation batch`. Cuerpo: qué estaba mal, norma o decisión, cómo se verificó.
@@ -114,6 +117,9 @@ El usuario revisa en GitHub. Cuando pide "atender los comentarios del PR N":
   campo o marca, no por "vacaci" o "UOM" en el nombre.
 - **Clasificar conceptos por atributos de la regla** (tipo de concepto, base de Obra Social / sindicato,
   gravado en Ganancias), no por listas de códigos sueltas en Python.
+- **Seguridad:** todo modelo nuevo con datos de nómina lleva permiso, regla de oficial / administrador,
+  regla multi-compañía y su caso en `tests/test_seguridad.py`; los campos sensibles en modelos de RR. HH.
+  llevan `groups="payroll.group_payroll_user"` (`docs/seguridad.md`).
 - Métodos cortos con un propósito; nombres en el idioma del código que rodea. Sin `sudo()` salvo necesidad
   justificada en el docstring.
 - **Documentación Doxygen obligatoria** (`docs/recetas.md#documentar-código`): `@file`, docstring con qué y

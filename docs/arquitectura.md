@@ -58,6 +58,7 @@ flowchart LR
 | `wizard/hr_payslip_run_input_import.py` | Importación de novedades por CSV. |
 | `wizard/payroll_arg_employee_wizard.py` | Importación / exportación de empleados (Excel / CSV). |
 | `wizard/hr_siradig_import_wizard.py` | Importación de F.572 (XML / ZIP). |
+| `security/` | Permisos de acceso, reglas por departamento y por compañía (ver [Seguridad](seguridad.md)). |
 | `migrations/19.0.2.0.0/` | Limpia asistencias duplicadas de los calendarios. |
 | `tools/documentacion.py` | Verificador de docstrings y generador de `docs/referencia.md`. |
 | `tests/` | Recibos de referencia, novedades y documentación. |
