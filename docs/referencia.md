@@ -1525,7 +1525,7 @@ Métodos públicos (invocables por RPC) y quién los llama: botones de vistas, P
 | `hr.payslip` | `action_open_payslip` | Abre la vista formulario del recibo individual (botón de la lista de recibos del lote). | botón en `hr.payslip.run.form.payroll.arg` |
 | `hr.payslip` | `action_print_recibo_pdf` | Genera y descarga el Recibo de Sueldo oficial en PDF para esta liquidación individual. | — |
 | `hr.payslip` | `action_reload_period_inputs` | Vuelve a leer calendario, licencias, asistencias y ficha, y pisa las entradas automáticas. | `models/hr_payslip_run.py`; botón en `hr.payslip.form.payroll.arg` |
-| `hr.payslip` | `compute_sheet` | Valida y calcula. No modifica las líneas de entrada. | `models/hr_payslip.py`; `models/hr_payslip_run.py` |
+| `hr.payslip` | `compute_sheet` | Valida y calcula. No modifica las líneas de entrada. | `models/hr_payslip.py`; `models/hr_payslip_run.py`; `wizard/hr_payslip_employees.py` |
 | `hr.payslip` | `get_inputs` | Una línea por código de entrada de la estructura, con el valor automático ya cargado. | — |
 | `hr.payslip` | `get_payroll_dict` | Parámetros disponibles en las reglas como ``payroll.clave`` (p. ej. ``payroll.tope``). | `models/hr_payslip.py` |
 | `hr.payslip` | `onchange_employee` | Formulario del recibo: fechas del lote y estructura según el contrato y el tipo de lote. | `models/hr_payslip.py` |
