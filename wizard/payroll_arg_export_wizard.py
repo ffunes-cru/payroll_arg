@@ -1,3 +1,7 @@
+"""@file
+Asistente de exportaciones de la nómina: recibos PDF, Libro de Sueldos Digital, F.931 (SICOSS) y
+archivos de acreditación bancaria (Galicia, Santander). Los archivos los genera `py_arg_reports`.
+"""
 import base64
 import os
 import tempfile
@@ -14,6 +18,8 @@ from py_arg_reports.reporters.acreditaciones.santander import AcreditacionSantan
 
 
 class PayrollArgExportWizard(models.TransientModel):
+    """Genera un archivo de un lote (o el recibo PDF de un recibo suelto) y lo ofrece para descargar."""
+
     _name = "payroll.arg.export.wizard"
     _description = "Wizard de Exportación de Reportes de Nómina Argentina"
 
@@ -48,6 +54,17 @@ class PayrollArgExportWizard(models.TransientModel):
     file_name = fields.Char(string="Nombre del Archivo", readonly=True)
 
     def action_generate_report(self):
+        """Genera el archivo elegido y reabre el asistente para descargarlo.
+
+        El recibo PDF sirve para un recibo o un lote; el resto, sólo para lotes. Los bancos incluyen
+        sólo recibos en espera o hechos con neto positivo.
+
+        @return Acción que reabre el asistente con el archivo para descargar.
+        @throws UserError Faltan datos o la librería devolvió un error.
+
+        @bug E3 (docs/revision.md): sin CBU o CUIL el archivo bancario sale con 22 ceros o
+             20000000000 en lugar de frenar.
+        """
         self.ensure_one()
         slip = self.payslip_id
         run = self.payslip_run_id or (slip.payslip_run_id if slip else False)

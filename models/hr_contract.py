@@ -1,3 +1,11 @@
+"""@file
+Datos laborales argentinos del contrato (`hr.version` en Odoo 19): tipo de salario, convenio,
+categoría y códigos AFIP, con la coherencia tipo de salario ↔ estructura ↔ calendario ↔ categoría.
+
+Mensualizado: `wage` es el sueldo mensual, estructura `MENSUAL_ARG`, calendario de 40 hs, liquidación
+mensual. Jornalizado: `wage` es el **valor hora**, estructura `JORNAL_QUINC_ARG`, calendario de 44 hs
+(UOM), liquidación quincenal.
+"""
 import logging
 
 from odoo import api, fields, models
@@ -5,27 +13,32 @@ from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
-# Constantes de estructura salarial — SSOT para codes de estructura
+## Códigos de las estructuras de jornalizados (fuente única para validaciones y onchanges).
 HOURLY_STRUCT_CODES = (
     "JORNAL_QUINC_ARG",
     "VACACIONES_JORNAL_ARG",
     "SAC_JORNAL_ARG",
     "FINAL_JORNAL_ARG",
 )
+## Códigos de las estructuras de mensualizados.
 MONTHLY_STRUCT_CODES = (
     "MENSUAL_ARG",
     "VACACIONES_MENSUAL_ARG",
     "SAC_MENSUAL_ARG",
     "FINAL_MENSUAL_ARG",
 )
+## Periodicidades de pago de jornalizados.
 HOURLY_SCHEDULE_PAYS = ("bi-weekly", "weekly")
+## Periodicidades de pago de mensualizados.
 MONTHLY_SCHEDULE_PAYS = ("monthly",)
 
-# Constante legal argentina
+## Días del mes comercial: el sueldo mensual se divide por 30 para el valor día (práctica LCT).
 DIAS_BASE_MENSUAL_LCT = 30
 
 
 class HrContract(models.Model):
+    """Contrato (versión del empleado) con los datos que pide la liquidación argentina y el F.931."""
+
     _inherit = "hr.version"
 
     wage_type = fields.Selection(
@@ -72,6 +85,8 @@ class HrContract(models.Model):
 
         Los onchange sincronizan en la UI, pero esta validación protege contra
         escrituras por API, imports, y operaciones batch.
+
+        @throws ValidationError Si el tipo de salario no coincide con la estructura.
         """
         for rec in self:
             if not rec.struct_id:
@@ -93,12 +108,18 @@ class HrContract(models.Model):
 
     @api.constrains("wage_type", "schedule_pay")
     def _check_wage_type_vs_schedule_pay(self):
-        """Validación de periodicidad relajada para no bloquear la operación."""
+        """Validación de periodicidad relajada para no bloquear la operación.
+
+        Se deja vacía a propósito: un jornalizado puede cobrar mensual y viceversa.
+        """
         pass
 
     @api.constrains("labor_category_id", "wage_type")
     def _check_labor_category_vs_wage_type(self):
-        """La categoría laboral debe coincidir con el tipo de salario."""
+        """La categoría laboral debe coincidir con el tipo de salario.
+
+        @throws ValidationError Categoría jornalizada en contrato mensualizado o al revés.
+        """
         for rec in self:
             if rec.labor_category_id and rec.labor_category_id.category_type:
                 if rec.labor_category_id.category_type != rec.wage_type:
@@ -123,7 +144,8 @@ class HrContract(models.Model):
         2. Búsqueda por horas semanales (44h para jornal, 40h para mensual)
         3. False con WARNING en log
 
-        Returns: record de resource.calendar o False
+        @param wage_type 'hourly' o 'monthly'.
+        @return record de resource.calendar o False
         """
         if wage_type == "hourly":
             cal = self.env.ref("payroll_arg.resource_calendar_jornal_44h", raise_if_not_found=False)
@@ -154,11 +176,11 @@ class HrContract(models.Model):
     def _get_default_struct(self, wage_type, tipo_liquidacion=None):
         """Resuelve la estructura salarial por defecto para un wage_type y tipo_liquidacion dado.
 
-        Args:
-            wage_type (str): 'hourly' o 'monthly'
-            tipo_liquidacion (str, optional): 'Vacaciones', 'SAC', 'Liquidación Final', 'Mensual', etc.
+        Sin la estructura especializada (p. ej. SAC jornal) cae en la base del tipo de salario.
 
-        Returns: record de hr.payroll.structure o False
+        @param wage_type 'hourly' o 'monthly'.
+        @param tipo_liquidacion 'Vacaciones', 'SAC', 'Liquidación Final', 'Mensual', etc. (opcional).
+        @return record de hr.payroll.structure o False
         """
         if wage_type == "hourly":
             if tipo_liquidacion == "Vacaciones":
@@ -193,6 +215,14 @@ class HrContract(models.Model):
 
     @api.onchange("resource_calendar_id")
     def _onchange_resource_calendar(self):
+        """Al elegir un calendario, deduce el tipo de salario y la estructura.
+
+        Jornalizado si el nombre dice "jornal" / "fábrica" o tiene 44 hs; mensualizado si dice
+        "mensual" / "admin" o tiene 40 / 48 hs.
+
+        @bug U2 (docs/revision.md): la deducción por nombre puede cambiar sin aviso el tipo de salario y
+             la estructura de un contrato al elegir un calendario cualquiera.
+        """
         if self.resource_calendar_id:
             cal = self.resource_calendar_id
             name = (cal.name or "").lower()
@@ -211,6 +241,9 @@ class HrContract(models.Model):
 
     @api.onchange("wage_type")
     def _onchange_wage_type(self):
+        """Al cambiar el tipo de salario sincroniza periodicidad (quincenal / mensual), estructura,
+        calendario (si era el del otro tipo), reglas de horas extras (con `payroll_arg_attendance`) y
+        limpia la categoría si es del otro tipo."""
         if self.wage_type == "hourly":
             self.schedule_pay = "bi-weekly"
             struct = self._get_default_struct("hourly")
@@ -242,6 +275,7 @@ class HrContract(models.Model):
 
     @api.onchange("struct_id")
     def _onchange_struct_id(self):
+        """Al elegir una estructura argentina, ajusta tipo de salario, periodicidad y calendario."""
         if self.struct_id:
             if self.struct_id.code in HOURLY_STRUCT_CODES:
                 self.wage_type = "hourly"
@@ -260,6 +294,8 @@ class HrContract(models.Model):
 
     @api.onchange("labor_category_id", "wage_type")
     def _onchange_labor_category(self):
+        """Al elegir la categoría de convenio propone su CCT y su básico (valor hora o sueldo mensual
+        según el tipo de salario)."""
         if self.labor_category_id:
             if not self.cct_id and self.labor_category_id.cct_id:
                 self.cct_id = self.labor_category_id.cct_id
@@ -274,6 +310,15 @@ class HrContract(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        """Crea contratos completando, desde la categoría, tipo de salario, básico, periodicidad,
+        estructura y calendario que no vengan en los valores.
+
+        Desenvuelve el ValidationError de las restricciones para mostrar el mensaje original.
+
+        @param vals_list Lista de diccionarios de valores.
+        @return Contratos creados.
+        @throws ValidationError Si quedan incoherentes tipo de salario, estructura o categoría.
+        """
         for vals in vals_list:
             cat_id = vals.get("labor_category_id")
             if cat_id:
@@ -314,6 +359,13 @@ class HrContract(models.Model):
             raise
 
     def write(self, vals):
+        """Al cambiar la categoría, el tipo de salario la sigue y el básico también, salvo que el
+        contrato tenga un básico pactado distinto al de la categoría anterior (se respeta).
+
+        @param vals Valores a escribir.
+        @return True.
+        @throws ValidationError Si quedan incoherentes tipo de salario, estructura o categoría.
+        """
         cat_id = vals.get("labor_category_id")
         if not cat_id:
             return self._write_unwrapping_errors(vals)
@@ -332,6 +384,12 @@ class HrContract(models.Model):
         return True
 
     def _write_unwrapping_errors(self, vals):
+        """`write` que muestra el ValidationError original de las restricciones (no el envoltorio).
+
+        @param vals Valores a escribir.
+        @return True.
+        @throws ValidationError El de la restricción que falló.
+        """
         try:
             return super().write(vals)
         except ValidationError as e:

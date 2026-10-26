@@ -1,3 +1,7 @@
+"""@file
+Línea de entrada del recibo (`hr.payslip.input`): la única fuente de las novedades que leen las reglas
+(`inp('CÓDIGO')`). Guarda empleado y lote para editarlas todas juntas en la matriz del lote.
+"""
 from odoo import fields, models
 
 
