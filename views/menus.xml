@@ -5,6 +5,7 @@
         name="Nómina Argentina"
         parent="payroll.payroll_menu_root"
         sequence="50"
+        groups="payroll.group_payroll_user"
     />
 
     <menuitem
