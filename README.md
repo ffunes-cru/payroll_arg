@@ -40,7 +40,7 @@ Leer en este orden. Los diagramas son [Mermaid](https://mermaid.js.org/): GitHub
 | [Preguntas abiertas](docs/pendientes.md) | Lo que falta decidir con el liquidador y el estudio (P1, P2…), con ejemplo y opciones. |
 | [Documentación de usuario](docs/usuario/README.md) | Guía de uso, escenarios de prueba con resultados esperados y cómo preparar una instancia de prueba. |
 | [Referencia](docs/referencia.md) | **Generada** desde Odoo: estructuras, reglas con su código, novedades, modelos, campos, permisos y quién llama a cada método. |
-| Código (Doxygen) | Cada clase y función documentada, con la lista de bugs conocidos. HTML: `doxygen docs/Doxyfile` → `docs/api/html/index.html`. |
+| [Código (Doxygen)](https://ffunes-cru.github.io/payroll_arg/api/) | Cada clase y función documentada, con grafos de llamadas y la lista de bugs conocidos. Se publica con cada commit en `main`; local: `doxygen docs/Doxyfile` → `docs/api/html/index.html`. |
 
 ## Inicio rápido
 

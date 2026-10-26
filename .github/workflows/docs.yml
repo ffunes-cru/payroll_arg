@@ -1,19 +1,19 @@
-# Publica docs/ en GitHub Pages con MkDocs. En los PR sólo construye (y falla si hay enlaces rotos).
+# Publica en GitHub Pages el sitio de docs/ (MkDocs) y, en /api/, la documentación del código (Doxygen)
+# de payroll_arg y payroll_arg_attendance. Corre en cada push a main (el código también es documentación);
+# en los PR sólo construye y falla si hay enlaces o anclas rotos.
 name: docs
 
 on:
   push:
     branches: [main]
-    paths: ["docs/**", "mkdocs.yml", "requirements-docs.txt", ".github/workflows/docs.yml"]
   pull_request:
-    paths: ["docs/**", "mkdocs.yml", "requirements-docs.txt", ".github/workflows/docs.yml"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,15 +21,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: payroll_arg
+      # Doxygen documenta también el módulo de asistencias (Doxyfile: INPUT ../payroll_arg_attendance)
+      - uses: actions/checkout@v4
+        with:
+          repository: ffunes-cru/payroll_arg_attendance
+          path: payroll_arg_attendance
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements-docs.txt
-      - run: mkdocs build --strict
+      - run: pip install -r payroll_arg/requirements-docs.txt
+      - run: sudo apt-get update -q && sudo apt-get install -y -q doxygen
+      - name: Sitio (MkDocs)
+        working-directory: payroll_arg
+        run: mkdocs build --strict
+      - name: Código (Doxygen)
+        working-directory: payroll_arg
+        run: |
+          doxygen docs/Doxyfile
+          cp -r docs/api/html site/api
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: payroll_arg/site
 
   deploy:
     if: github.event_name != 'pull_request'
