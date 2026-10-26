@@ -82,7 +82,8 @@ mkdocs build --strict   # lo que corre el CI: falla con enlaces o anclas rotos
 ```
 
 El sitio (<https://ffunes-cru.github.io/payroll_arg/>) lo publica `.github/workflows/docs.yml` en cada push a
-`main` que toque `docs/`. Una página nueva de `docs/` tiene que agregarse al `nav` de `mkdocs.yml`.
+`main`, junto con la documentación del código en <https://ffunes-cru.github.io/payroll_arg/api/> (Doxygen
+de `payroll_arg` y `payroll_arg_attendance`). Una página nueva de `docs/` tiene que agregarse al `nav` de `mkdocs.yml`.
 
 `tests/test_documentacion.py` falla si falta un docstring o si `docs/referencia.md` quedó viejo.
 

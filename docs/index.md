@@ -11,7 +11,7 @@ Digital, F.931 y acreditaciones bancarias. Software libre bajo
 | Quien prueba el sistema | [Escenarios de prueba](usuario/escenarios.md) y sus [resultados esperados](usuario/resultados.md) |
 | Quien prepara una base de prueba | [Preparar una instancia](usuario/preparar-instancia.md) |
 | Quien quiere entender el cálculo | [Conceptos](conceptos.md) y [Liquidación](liquidacion.md) |
-| Quien programa | [Arquitectura](arquitectura.md), [Recetas](recetas.md) y la [referencia generada](referencia.md) |
+| Quien programa | [Arquitectura](arquitectura.md), [Recetas](recetas.md), la [referencia generada](referencia.md) y el [código documentado](https://ffunes-cru.github.io/payroll_arg/api/) |
 
 !!! warning "En revisión"
     El módulo tiene problemas conocidos, algunos de gravedad alta: ver la
