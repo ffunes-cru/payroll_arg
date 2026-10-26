@@ -60,7 +60,7 @@
         <field name="arch" type="xml">
             <form string="Categoría Laboral">
                 <header>
-                    <button name="action_update_contract_wages" type="object" string="Actualizar Sueldos de Contratos" class="oe_highlight" icon="fa-refresh" confirm="¿Desea actualizar el sueldo de todos los contratos activos con esta categoría?"/>
+                    <button name="action_update_contract_wages" type="object" groups="payroll.group_payroll_manager" string="Actualizar Sueldos de Contratos" class="oe_highlight" icon="fa-refresh" confirm="¿Desea actualizar el sueldo de todos los contratos activos con esta categoría?"/>
                 </header>
                 <sheet>
                     <group>

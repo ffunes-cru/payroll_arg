@@ -170,3 +170,20 @@ class TestSeguridad(TransactionCase):
             self.assertTrue(vistos, modelo)
             self.assertEqual({empleado(r).id for r in vistos}, {self.emp_d1.id}, modelo)
             self.assertEqual(self._visible(self.liquidador, modelo, registros), registros, modelo)
+
+    # ── S6: la configuración la cambia el administrador ──
+
+    def test_s6_configuracion_solo_administrador(self):
+        """El oficial lee convenios, categorías y escalas de Ganancias pero no los cambia, ni actualiza
+        sueldos en masa; el administrador sí."""
+        oficial = self.env(user=self.oficial)
+        categoria = self.env.ref("payroll_arg.afip_cat_uom_operario")
+        for registro in (self.env.ref("payroll_arg.afip_cct_uom"), categoria,
+                         self.env.ref("payroll_arg.scale_ganancias_2026")):
+            self.assertTrue(oficial[registro._name].browse(registro.id).name)
+            with self.assertRaises(AccessError, msg=registro._name):
+                oficial[registro._name].browse(registro.id).write({"name": "cambiado"})
+        with self.assertRaises(AccessError):
+            oficial["afip.labor.category"].browse(categoria.id).action_update_contract_wages()
+        self.env(user=self.liquidador)["afip.cct"].browse(self.env.ref("payroll_arg.afip_cct_uom").id).write(
+            {"union_rate": 2.5})
