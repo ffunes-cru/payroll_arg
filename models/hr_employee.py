@@ -186,9 +186,10 @@ class HrEmployee(models.Model):
 
         @param wage_type 'hourly' o 'monthly'.
         @param tipo_liquidacion Tipo de lote (opcional).
-        @return hr.payroll.structure o False.
+        @return hr.payroll.structure o False (de la compañía del empleado).
         """
-        return self.env["hr.version"]._get_default_struct(wage_type, tipo_liquidacion=tipo_liquidacion)
+        return self.env["hr.version"]._get_default_struct(
+            wage_type, tipo_liquidacion=tipo_liquidacion, company=self[:1].company_id or self.env.company)
 
     # ──────────────────────────────────────────────
     # ONCHANGES

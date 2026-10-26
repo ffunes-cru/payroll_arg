@@ -536,6 +536,7 @@ Revisión de permisos del 26/10/2026, resuelta en el PR "Seguridad" (detalle en
 | S5 | Los lotes son sólo para *Haberes: Administrador* (OCA). | Se mantiene: liquidador = Administrador (D14) |
 | S6 | El oficial de nómina podía cambiar convenios, categorías, tablas y escalas, y actualizar sueldos en masa. | Resuelto |
 | S7 | Sin reglas por compañía en los modelos nuevos; la escala de Ganancias no se elegía por compañía. | Resuelto (D15) |
+| S8 | Estructuras y reglas eran de la compañía principal: una segunda compañía no podía elegirlas ni liquidar. | Resuelto: reglas compartidas, estructuras copiadas por compañía |
 
 ## Lo que está bien
 
