@@ -1,7 +1,21 @@
+"""@file
+Impuesto a las Ganancias, 4ta categoría (RG 4003): escala del Art. 94 y deducciones personales del
+Art. 30 LIG por período fiscal, y acumuladores mensuales por empleado que usa el cálculo acumulativo de
+`hr.payslip._calculate_ganancias_from_rules()`.
+"""
 from odoo import api, fields, models
 
 
 class HrGananciasScale(models.Model):
+    """Escala y deducciones personales de un período (importes **anuales**).
+
+    Se carga una por semestre o año, como publica ARCA. El cálculo la toma por fecha del recibo.
+
+    @bug C5 (docs/revision.md): la escala 2026 de `data/ganancias_scale_2026.xml` tiene tramos
+         redondos que no coinciden con la tabla oficial y deducciones con los valores de 2024
+         (Ley 27.743); reemplazarla por la publicada por ARCA antes de liquidar.
+    """
+
     _name = "hr.ganancias.scale"
     _description = "Escala Progresiva Impuesto a las Ganancias (Art. 94 LIG)"
     _order = "date_from desc, sequence, id"
@@ -55,7 +69,11 @@ class HrGananciasScale(models.Model):
 
     @api.model
     def get_scale_for_date(self, target_date):
-        """Busca la escala activa vigente para la fecha indicada."""
+        """Busca la escala activa vigente para la fecha indicada.
+
+        @param target_date Fecha (el fin del período del recibo).
+        @return hr.ganancias.scale (vacío si no hay escala: no se retiene).
+        """
         return self.search(
             [
                 ("date_from", "<=", target_date),
@@ -70,6 +88,13 @@ class HrGananciasScale(models.Model):
         
         Según RG 4003, los tramos de la escala se multiplican por (month / 12.0)
         para determinar la alícuota acumulada correspondiente al período.
+
+        Ejemplo en septiembre (factor 9/12): el tramo anual 1.200.000–2.400.000 pasa a ser
+        900.000–1.800.000 con cuota fija 45.000.
+
+        @param net_taxable_accumulated Ganancia neta sujeta a impuesto acumulada en el año.
+        @param month Mes del recibo (1 a 12).
+        @return Impuesto acumulado determinado en pesos.
         """
         self.ensure_one()
         if net_taxable_accumulated <= 0:
@@ -92,6 +117,9 @@ class HrGananciasScale(models.Model):
 
 
 class HrGananciasScaleLine(models.Model):
+    """Tramo de la escala del Art. 94: desde / hasta, cuota fija y alícuota sobre el excedente (anuales).
+    `amount_to` = 0 marca el último tramo (sin límite)."""
+
     _name = "hr.ganancias.scale.line"
     _description = "Tramo de Escala Progresiva Ganancias"
     _order = "amount_from"
@@ -110,6 +138,14 @@ class HrGananciasScaleLine(models.Model):
 
 
 class HrGananciasAccumulator(models.Model):
+    """Acumulador de Ganancias de un empleado para un mes: bruto, aportes, deducciones, impuesto y
+    retención. Lo escribe el cálculo de la regla `RET_GANANCIAS`; los meses anteriores del año se suman
+    para el cálculo acumulativo.
+
+    @bug C2 (docs/revision.md): es uno por mes, pero un mes puede tener varias liquidaciones
+         (quincenas, SAC, vacaciones): la última pisa a las anteriores.
+    """
+
     _name = "hr.ganancias.accumulator"
     _description = "Acumulador Mensual Ganancias 4ta Categoría"
     _order = "employee_id, year desc, month desc"
@@ -161,6 +197,7 @@ class HrGananciasAccumulator(models.Model):
 
     @api.depends("employee_id", "year", "month")
     def _compute_display_name(self):
+        """Nombre "Empleado - año/mes"."""
         for rec in self:
             emp = rec.employee_id.name or f"Emp {rec.employee_id.id}"
             rec.display_name = f"{emp} - {rec.year}/{rec.month:02d}"

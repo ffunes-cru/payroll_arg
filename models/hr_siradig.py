@@ -1,9 +1,21 @@
+"""@file
+Formulario F.572 Web (SIRADIG – Trabajador) importado de ARCA: cargas de familia, deducciones
+generales, pagos a cuenta y otros empleadores. Al aplicarlo se copian a la ficha del empleado los datos
+que usa el cálculo de Ganancias.
+"""
 import re
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
 class HrSiradigF572(models.Model):
+    """Una presentación del F.572 de un empleado para un período fiscal.
+
+    @bug C6 (docs/revision.md): de todo el formulario el cálculo usa sólo cónyuge, cantidad de hijos y
+         deducciones anuales / 12; los otros empleadores (pluriempleo), los pagos a cuenta, los meses
+         de vigencia, el porcentaje de las cargas y los topes de cada deducción no se aplican.
+    """
+
     _name = "hr.siradig.f572"
     _description = "Declaración Jurada SIRADIG F.572 (AFIP / ARCA)"
     _order = "periodo_fiscal desc, fecha_presentacion desc, nro_presentacion desc, id desc"
@@ -153,12 +165,15 @@ class HrSiradigF572(models.Model):
 
     @api.depends("employee_id", "periodo_fiscal", "nro_presentacion")
     def _compute_display_name(self):
+        """Nombre "F.572 - empleado (período - Envío #n)"."""
         for rec in self:
             emp = rec.employee_id.name or rec.cuit_empleado or "Sin Empleado"
             rec.display_name = f"F.572 - {emp} ({rec.periodo_fiscal} - Envío #{rec.nro_presentacion})"
 
     @api.depends("cargas_familia_ids", "cargas_familia_ids.parentesco", "cargas_familia_ids.porcentaje_deduccion")
     def _compute_resumen_cargas(self):
+        """Cuenta cónyuge, hijos e hijos incapacitados declarados (Art. 30 inc. b LIG) y arma el
+        resumen. Cuenta personas: no tiene en cuenta los meses ni el porcentaje de cada carga."""
         for rec in self:
             conyuge = False
             hijos = 0
@@ -188,6 +203,8 @@ class HrSiradigF572(models.Model):
 
     @api.depends("deduccion_ids", "deduccion_ids.monto_total", "pago_cuenta_ids", "pago_cuenta_ids.monto_total", "otro_empleador_ids", "otro_empleador_ids.ganancia_bruta")
     def _compute_totales(self):
+        """Totales del formulario: deducciones anuales y su doceava parte (lo que se descuenta por mes),
+        pagos a cuenta y bruto de otros empleadores."""
         for rec in self:
             tot_ded = sum(d.monto_total for d in rec.deduccion_ids)
             rec.total_deducciones_anual = round(tot_ded, 2)
@@ -196,7 +213,14 @@ class HrSiradigF572(models.Model):
             rec.total_otros_empleadores_rem = round(sum(o.ganancia_bruta for o in rec.otro_empleador_ids), 2)
 
     def action_apply_to_employee(self):
-        """Traslada las deducciones del F.572 a los campos fiscales del empleado."""
+        """Traslada las deducciones del F.572 a los campos fiscales del empleado.
+
+        Copia cónyuge, hijos, hijos incapacitados y la deducción mensual estimada; la nómina la toma en
+        la entrada `DED_SIRADIG` de los recibos que se creen o recarguen después.
+
+        @return Notificación con lo aplicado.
+        @throws UserError Si la declaración no tiene empleado.
+        """
         self.ensure_one()
         emp = self.employee_id
         if not emp:
@@ -230,6 +254,8 @@ class HrSiradigF572(models.Model):
 
 
 class HrSiradigCargaFamilia(models.Model):
+    """Carga de familia declarada (cónyuge, hijo, hijo incapacitado) con vigencia y porcentaje."""
+
     _name = "hr.siradig.carga.familia"
     _description = "Carga de Familia Declarada en F.572"
     _order = "parentesco, id"
@@ -263,6 +289,7 @@ class HrSiradigCargaFamilia(models.Model):
 
     @api.depends("apellido", "nombre", "nro_doc")
     def _compute_nombre_completo(self):
+        """"Apellido Nombre", o el documento si no hay nombre."""
         for rec in self:
             ap = (rec.apellido or "").strip()
             nom = (rec.nombre or "").strip()
@@ -271,6 +298,8 @@ class HrSiradigCargaFamilia(models.Model):
 
 
 class HrSiradigDeduccion(models.Model):
+    """Deducción general declarada (prepaga, alquiler, servicio doméstico…) con su monto anual."""
+
     _name = "hr.siradig.deduccion"
     _description = "Deducción General Declarada en F.572"
     _order = "tipo_nombre, monto_total desc"
@@ -305,11 +334,13 @@ class HrSiradigDeduccion(models.Model):
 
     @api.depends("monto_total")
     def _compute_monto_mensual(self):
+        """Monto anual / 12."""
         for rec in self:
             rec.monto_mensual_estimado = round(rec.monto_total / 12.0, 2)
 
     @api.depends("tipo_nombre")
     def _compute_tope_legal(self):
+        """Texto informativo con el tope legal del tipo de deducción (no se aplica en el cálculo)."""
         topes = {
             "prepaga": "Hasta 5% de la Ganancia Neta Anual",
             "donaciones": "Hasta 5% de la Ganancia Neta Anual",
@@ -325,6 +356,8 @@ class HrSiradigDeduccion(models.Model):
 
 
 class HrSiradigPagoCuenta(models.Model):
+    """Pago a cuenta o percepción declarada (computable contra el impuesto; hoy no se computa)."""
+
     _name = "hr.siradig.pago.cuenta"
     _description = "Pago a Cuenta / Percepción Declarada en F.572"
     _order = "id"
@@ -336,6 +369,8 @@ class HrSiradigPagoCuenta(models.Model):
 
 
 class HrSiradigOtroEmpleador(models.Model):
+    """Remuneración de otro empleador (pluriempleo) por mes; hoy no se suma al cálculo."""
+
     _name = "hr.siradig.otro.empleador"
     _description = "Datos de Pluriempleo (Otro Empleador) F.572"
     _order = "mes, id"

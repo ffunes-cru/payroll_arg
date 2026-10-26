@@ -1,3 +1,5 @@
+"""@file
+Modelos del módulo `payroll_arg`."""
 from . import afip_base
 from . import res_company
 from . import hr_employee

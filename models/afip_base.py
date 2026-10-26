@@ -1,7 +1,17 @@
+"""@file
+Tablas de referencia de ARCA (ex AFIP) y de los convenios: CCT, categorías profesionales, obras
+sociales (RNOS), modalidades de contratación, situaciones de revista, condiciones, actividades, zonas y
+códigos de siniestrado. Los códigos son los de las tablas del F.931 / Libro de Sueldos Digital.
+"""
 from odoo import fields, models
 
 
 class AfipCct(models.Model):
+    """Convenio Colectivo de Trabajo: alícuota de cuota sindical y divisor de vacaciones del convenio.
+
+    Las reglas detectan el convenio UOM por el texto "UOM" en el nombre (seguro de vida UOM).
+    """
+
     _name = "afip.cct"
     _description = "Convenio Colectivo de Trabajo (CCT)"
 
@@ -18,6 +28,11 @@ class AfipCct(models.Model):
 
 
 class AfipLaborCategory(models.Model):
+    """Categoría profesional del convenio con su básico vigente (valor hora o sueldo mensual).
+
+    Al asignarla a un contrato le propone tipo de salario, CCT y básico.
+    """
+
     _name = "afip.labor.category"
     _description = "Categoría Profesional de Convenio"
 
@@ -37,7 +52,13 @@ class AfipLaborCategory(models.Model):
     monthly_wage = fields.Float(string="Sueldo Básico Mensual", default=0.0)
 
     def action_update_contract_wages(self):
-        """Actualiza el sueldo básico de todos los contratos activos asociados a esta categoría."""
+        """Actualiza el sueldo básico de todos los contratos activos asociados a esta categoría.
+
+        Se usa al cargar una nueva escala salarial del convenio. Pisa también los básicos pactados por
+        encima de la categoría (a diferencia de `hr.version.write()`, que los respeta).
+
+        @return Notificación con la cantidad de contratos actualizados.
+        """
         self.ensure_one()
         contracts = self.env["hr.version"].search([("labor_category_id", "=", self.id)])
         new_wage = self.hourly_wage if self.category_type == "hourly" else self.monthly_wage
@@ -56,6 +77,8 @@ class AfipLaborCategory(models.Model):
 
 
 class AfipHealthInsurance(models.Model):
+    """Obra social del Registro Nacional de Obras Sociales (código RNOS de 6 dígitos para el F.931)."""
+
     _name = "afip.health.insurance"
     _description = "Obra Social (Registro Nacional de Obras Sociales - RNOS)"
 
@@ -65,6 +88,13 @@ class AfipHealthInsurance(models.Model):
     active = fields.Boolean(default=True)
 
     def name_get(self):
+        """Muestra "[código] nombre".
+
+        @return Lista de (id, nombre).
+
+        @bug T6 (docs/revision.md): Odoo 17+ ya no usa `name_get`; hay que pasarlo a
+             `_compute_display_name` para que se vea el código.
+        """
         result = []
         for rec in self:
             result.append((rec.id, f"[{rec.code}] {rec.name}"))
@@ -72,6 +102,8 @@ class AfipHealthInsurance(models.Model):
 
 
 class AfipContractType(models.Model):
+    """Modalidad de contratación (tabla del F.931, p. ej. 001 = tiempo indeterminado)."""
+
     _name = "afip.contract.type"
     _description = "Modalidad de Contratación AFIP"
 
@@ -80,6 +112,8 @@ class AfipContractType(models.Model):
 
 
 class AfipSituation(models.Model):
+    """Situación de revista del trabajador en el período (p. ej. 1 = activo)."""
+
     _name = "afip.situation"
     _description = "Situación de Revista AFIP"
 
@@ -88,6 +122,8 @@ class AfipSituation(models.Model):
 
 
 class AfipCondition(models.Model):
+    """Condición del trabajador ante la Seguridad Social (p. ej. 01 = servicios comunes mayor de 18)."""
+
     _name = "afip.condition"
     _description = "Condición del Trabajador AFIP"
 
@@ -96,6 +132,8 @@ class AfipCondition(models.Model):
 
 
 class AfipActivity(models.Model):
+    """Actividad del trabajador (tabla del F.931)."""
+
     _name = "afip.activity"
     _description = "Actividad del Trabajador AFIP"
 
@@ -104,6 +142,8 @@ class AfipActivity(models.Model):
 
 
 class AfipZone(models.Model):
+    """Zona geográfica del lugar de trabajo (tabla del F.931)."""
+
     _name = "afip.zone"
     _description = "Zona Geográfica AFIP"
 
@@ -112,6 +152,8 @@ class AfipZone(models.Model):
 
 
 class AfipSiniestrado(models.Model):
+    """Código de siniestrado de la ART (tabla del F.931, 0 = no siniestrado)."""
+
     _name = "afip.siniestrado"
     _description = "Código de Siniestrado AFIP"
 

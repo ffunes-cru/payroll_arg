@@ -1,8 +1,21 @@
+"""@file
+Parámetros legales de la compañía para la nómina: alícuotas de aportes y contribuciones, coeficientes,
+detracción, tope imponible, ART, seguros de vida y datos del último pago de Seguridad Social (recibo).
+
+Son valores únicos sin fecha de vigencia: al cambiarlos, los recibos que se recalculen usan el valor
+nuevo (ver T8 en docs/revision.md).
+"""
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
 
 class ResCompany(models.Model):
+    """Compañía con CUIT y parámetros de liquidación argentina.
+
+    @bug C12 (docs/revision.md): `art_fixed_fee` (cuota fija ART por trabajador) no la usa ninguna regla.
+    @bug T7: `ss_contrib_rate` no se usa y `afip_company_type` no cambia las alícuotas (sólo se informa).
+    """
+
     _inherit = "res.company"
 
     cuit = fields.Char(string="CUIT Empleador", size=11, help="11 dígitos numéricos sin guiones")
@@ -118,6 +131,10 @@ class ResCompany(models.Model):
 
     @api.constrains("cuit")
     def _check_cuit(self):
+        """El CUIT del empleador debe tener 11 dígitos (no valida el dígito verificador).
+
+        @throws ValidationError CUIT con otro largo o con letras.
+        """
         for company in self:
             if company.cuit:
                 cuit_clean = company.cuit.replace("-", "").strip()

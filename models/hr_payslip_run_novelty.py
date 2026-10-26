@@ -1,3 +1,7 @@
+"""@file
+Novedades fijadas para todo un lote (`hr.payslip.run.novelty`): un mismo valor para todos los recibos
+(precio de la vianda, monto de presentismo, asignación no remunerativa del acuerdo…).
+"""
 from odoo import api, fields, models
 
 
@@ -28,11 +32,17 @@ class HrPayslipRunNovelty(models.Model):
 
     @api.depends("input_id", "amount")
     def _compute_display_name(self):
+        """Nombre "Novedad: valor"."""
         for novelty in self:
             novelty.display_name = f"{novelty.input_id.name}: {novelty.amount:,.2f}"
 
     def action_apply(self):
-        """Pisa el código en todos los recibos editables del lote."""
+        """Pisa el código en todos los recibos editables del lote.
+
+        Botón *Aplicar a todos* de la línea. También pisa lo que se haya corregido a mano en un recibo.
+
+        @return True.
+        """
         for novelty in self:
             slips = novelty.run_id.slip_ids.filtered(lambda s: s.state in ("draft", "verify"))
             slips._set_input_amounts({novelty.code: novelty.amount})

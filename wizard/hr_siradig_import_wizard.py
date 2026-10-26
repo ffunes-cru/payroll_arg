@@ -1,3 +1,6 @@
+"""@file
+Importación del F.572 Web (SIRADIG) descargado de ARCA, en XML o en ZIP con varios empleados.
+"""
 import base64
 import io
 import re
@@ -8,6 +11,9 @@ from odoo.exceptions import UserError
 
 
 class HrSiradigImportWizard(models.TransientModel):
+    """Asistente de importación de F.572: crea o actualiza la declaración y opcionalmente la aplica a la
+    ficha del empleado."""
+
     _name = "hr.siradig.import.wizard"
     _description = "Asistente de Importación SIRADIG F.572 (AFIP / ARCA)"
 
@@ -35,6 +41,11 @@ class HrSiradigImportWizard(models.TransientModel):
     result_summary = fields.Text(string="Resumen de Importación", readonly=True)
 
     def action_import_siradig(self):
+        """Procesa el archivo subido (uno o varios XML) y muestra el resumen por empleado.
+
+        @return Acción que reabre el asistente con el resultado.
+        @throws UserError Archivo vacío, ZIP dañado o sin XML.
+        """
         self.ensure_one()
         if not self.file_data:
             raise UserError("Debe seleccionar un archivo XML o ZIP para importar.")
@@ -103,7 +114,19 @@ class HrSiradigImportWizard(models.TransientModel):
         }
 
     def _process_single_xml(self, filename, raw_bytes):
-        """Parsea un archivo XML de AFIP F.572 e impacta en la BD."""
+        """Parsea un archivo XML de AFIP F.572 e impacta en la BD.
+
+        Busca al empleado por CUIL (también en identificación o NIF), lee período, número de
+        presentación, cargas de familia, deducciones y pagos a cuenta, y crea o reemplaza la declaración
+        con ese período y número.
+
+        @param filename Nombre del archivo (para los mensajes).
+        @param raw_bytes Contenido del XML.
+        @return dict {status: success / skipped / error, msg, applied}.
+
+        @bug T9 (docs/revision.md): con *Aplicar inmediatamente*, importar una presentación vieja después
+             de una nueva pisa la ficha con los datos viejos. Tampoco lee los otros empleadores.
+        """
         # Intentar decodificar con distintos encodings comunes de AFIP
         text = None
         for enc in ["utf-8", "iso-8859-1", "windows-1252", "latin-1"]:
@@ -127,6 +150,13 @@ class HrSiradigImportWizard(models.TransientModel):
             return {"status": "error", "msg": f"{filename}: XML inválido ({e})."}
 
         def find_child_text(elem, tag_names, default=""):
+            """Texto del primer hijo con alguno de esos nombres (sin espacio de nombres ni mayúsculas).
+
+            @param elem Elemento padre.
+            @param tag_names Nombres posibles de la etiqueta.
+            @param default Valor si no está.
+            @return Texto.
+            """
             for child in elem:
                 c_tag = child.tag.split("}")[-1].lower()
                 for target in tag_names:
@@ -135,6 +165,12 @@ class HrSiradigImportWizard(models.TransientModel):
             return default
 
         def find_child_elem(elem, tag_names):
+            """Primer hijo con alguno de esos nombres.
+
+            @param elem Elemento padre.
+            @param tag_names Nombres posibles de la etiqueta.
+            @return Elemento o None.
+            """
             for child in elem:
                 c_tag = child.tag.split("}")[-1].lower()
                 for target in tag_names:

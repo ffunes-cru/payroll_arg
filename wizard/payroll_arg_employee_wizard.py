@@ -1,3 +1,7 @@
+"""@file
+Alta y actualización masiva de empleados desde Excel / CSV, y exportación de la plantilla o de los
+empleados actuales con el mismo formato.
+"""
 import base64
 import csv
 import datetime
@@ -10,6 +14,12 @@ from odoo.exceptions import UserError
 
 
 class PayrollArgEmployeeWizard(models.TransientModel):
+    """Asistente de importación / exportación de empleados.
+
+    Columnas: legajo, nombre, CUIL, tipo de salario, código CCT, código de categoría, sueldo o valor
+    hora, fecha de ingreso, código de obra social, forma de pago, CBU y lugar de trabajo.
+    """
+
     _name = "payroll.arg.employee.wizard"
     _description = "Importador y Exportador Masivo de Empleados"
 
@@ -44,6 +54,10 @@ class PayrollArgEmployeeWizard(models.TransientModel):
     result_summary = fields.Text(string="Resultado de la Operación", readonly=True)
 
     def action_export_excel(self):
+        """Genera el Excel: plantilla con dos filas de ejemplo o todos los empleados actuales.
+
+        @return Acción que reabre el asistente con el archivo para descargar.
+        """
         self.ensure_one()
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {"in_memory": True})
@@ -178,6 +192,12 @@ class PayrollArgEmployeeWizard(models.TransientModel):
 
     @api.model
     def _parse_date_value(self, date_val):
+        """Fecha de una celda: acepta fechas de Excel y texto AAAA-MM-DD, DD/MM/AAAA, DD-MM-AAAA y
+        AAAA/MM/DD.
+
+        @param date_val Valor de la celda.
+        @return date, o False si no se puede leer.
+        """
         if not date_val:
             return False
         if isinstance(date_val, datetime.date):
@@ -200,6 +220,15 @@ class PayrollArgEmployeeWizard(models.TransientModel):
             return False
 
     def action_import_file(self):
+        """Crea o actualiza empleados desde el archivo.
+
+        Busca al empleado por CUIL y luego por legajo. Si la categoría tiene tipo, manda sobre la columna
+        de tipo de salario; sin sueldo usa el básico de la categoría. Asigna calendario, estructura y
+        periodicidad por defecto del tipo de salario. Los errores de una fila no frenan las demás.
+
+        @return Acción que reabre el asistente con el resumen.
+        @throws UserError Sin archivo, Excel ilegible o sin filas.
+        """
         self.ensure_one()
         if not self.data_file:
             raise UserError("Por favor seleccione un archivo Excel (.xlsx) o CSV para importar.")
