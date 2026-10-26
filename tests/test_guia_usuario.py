@@ -105,3 +105,10 @@ class TestGuiaUsuario(TransactionCase):
         importar.action_import_file()
         self.assertIn("Empleados Creados: 2", importar.result_summary)
         self.assertNotIn("Errores", importar.result_summary)
+
+    # ── T1: recargar el F.572 sin declaraciones ──
+
+    def test_t1_recargar_siradig_sin_f572(self):
+        """*Recargar desde Último F.572* sin declaraciones muestra el aviso, no un error de Python."""
+        with self.assertRaises(UserError):
+            self.con_contrato.action_reapply_latest_siradig()

@@ -9,7 +9,7 @@ empleado (versión actual); por eso las restricciones y onchanges del contrato t
 import logging
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -131,9 +131,6 @@ class HrEmployee(models.Model):
 
         @return Notificación de `hr.siradig.f572.action_apply_to_employee()`.
         @throws UserError Si el empleado no tiene ningún F.572.
-
-        @bug T1 (docs/revision.md): `UserError` no está importado en este archivo; sin F.572 el botón
-             termina en NameError en lugar del mensaje.
         """
         self.ensure_one()
         latest = self.siradig_latest_id or (self.siradig_f572_ids and self.siradig_f572_ids[0])
