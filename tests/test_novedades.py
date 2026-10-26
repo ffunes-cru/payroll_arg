@@ -7,7 +7,10 @@ from odoo.tests import Form, TransactionCase, tagged
 class TestNovedades(TransactionCase):
     """Las novedades viven sólo en hr.payslip.input. Los importes esperados son los del
     motor anterior para los mismos datos (14/10/2026), salvo dos correcciones posteriores:
-    el aporte del trabajador al Seguro de Vida UOM y el redondeo del básico mensual."""
+    el aporte del trabajador al Seguro de Vida UOM y el redondeo del básico mensual.
+
+    @see docs/tests.md (sintaxis de los tests y de Form), https://www.odoo.com/documentation/19.0/developer/reference/backend/testing.html#testing-python-code
+    """
 
     @classmethod
     def setUpClass(cls):

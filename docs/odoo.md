@@ -49,6 +49,38 @@ sigue diciendo `contract` (`slip.contract_id` es un `hr.version`).
 
 ## Permisos
 
-Todos los modelos del módulo se habilitan para el grupo *Payroll / User* de `payroll` (ver la tabla de
-la [referencia](referencia.md#permisos-por-modelo)). No hay reglas por registro: quien liquida ve todos
-los empleados de la compañía.
+Odoo controla el acceso en tres capas ([Security in Odoo](https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html)). Qué se configuró en este
+módulo y para quién: [Seguridad](seguridad.md).
+
+| Capa | Qué decide | En el módulo |
+|---|---|---|
+| [Permisos de acceso](https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#access-rights) (`ir.model.access`) | Si un grupo puede leer, escribir, crear o borrar **un modelo**. | `security/ir.model.access.csv`; tabla en la [referencia](referencia.md#permisos-por-modelo). |
+| [Reglas de registro](https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#record-rules) (`ir.rule`) | **Qué registros** de ese modelo ve o modifica. | `security/payroll_arg_security.xml`. |
+| [Acceso a campos](https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#field-access) (`groups=` en el campo) | Si un grupo ve **un campo**; si no, el campo desaparece de las vistas y leerlo da `AccessError`. | CBU y datos de Ganancias del empleado. |
+
+### Cómo se evalúa una regla de registro
+
+```xml
+<field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+```
+
+El `domain_force` es un [dominio](https://www.odoo.com/documentation/19.0/developer/reference/backend/orm.html#reference-orm-domains): una lista de condiciones
+`(campo, operador, valor)`; `'|'` delante de dos condiciones es un "o".
+
+- **Lo que está entre comillas a la izquierda es un campo** del registro filtrado (`company_id` del
+  acumulador). Puede ser un camino: `payslip_id.company_id` (la compañía del recibo de la novedad).
+- **Lo que está sin comillas a la derecha son variables** que arma Odoo al evaluar la regla, en
+  `ir.rule._eval_context()` (`odoo/addons/base/models/ir_rule.py`):
+
+| Variable | Valor |
+|---|---|
+| `user` | El usuario actual (`user.id`, `user.employee_id`…). |
+| `company_ids` | Las compañías **tildadas** en el selector de compañías, filtradas por las permitidas en la ficha del usuario. |
+| `company_id` | La compañía activa. |
+
+- **Regla global** (sin grupos, `global = True`): se aplica a todos y se combina con **y** con las demás;
+  las reglas **de grupo** se combinan con **o** entre sí
+  ([global y de grupo](https://www.odoo.com/documentation/19.0/developer/reference/backend/security.html#global-rules-versus-group-rules)). Por eso el administrador de
+  nómina ve "todo" (`[(1, '=', 1)]`) pero sólo de sus compañías.
+- El superusuario (`sudo()`) no tiene reglas: los tests preparan datos con él y prueban con
+  `self.env(user=…)` (ver [Tests](tests.md#probar-permisos)).
