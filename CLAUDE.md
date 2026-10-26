@@ -79,6 +79,24 @@ El repo `odoo/` de afuera no versiona estos addons (aparecen sin seguimiento): n
   regenerar `docs/usuario/resultados.md` en el mismo commit y actualizar el texto del ejercicio (quitar
   el "problema conocido" que se arregló). Un arreglo nuevo que se pueda ver en un ejercicio, agregarlo.
 
+## Comentarios en los PR
+
+El usuario revisa en GitHub. Cuando pide "atender los comentarios del PR N":
+
+1. Leer todo:
+   - comentarios generales: `gh api repos/ffunes-cru/<repo>/issues/<N>/comments`;
+   - comentarios en línea: `gh api repos/ffunes-cru/<repo>/pulls/<N>/comments`;
+   - revisiones: `gh api repos/ffunes-cru/<repo>/pulls/<N>/reviews`.
+2. Resumir qué pide cada uno y preguntar si alguno es ambiguo o contradice una decisión.
+3. Arreglar en la **misma rama** con commits nuevos encima (`fix: address review — …`), uno por
+   comentario o tema. No reescribir commits ya publicados ni `--force`: el puntero del submódulo y los
+   PR apilados dependen de esos hashes.
+4. Contestar cada comentario en línea con qué se hizo y el hash del commit
+   (`gh api repos/ffunes-cru/<repo>/pulls/<N>/comments/<id>/replies -f body=...`). No resolver
+   conversaciones: las resuelve el usuario.
+5. Si el cambio toca `payroll_arg_reportes`, actualizar también el puntero del submódulo en la rama de
+   `payroll_arg` que lo usa.
+
 ## Principios de código
 
 - **La regla de negocio vive en un solo lugar.** Fórmulas en las reglas del XML; novedades automáticas en
@@ -101,5 +119,6 @@ El repo `odoo/` de afuera no versiona estos addons (aparecen sin seguimiento): n
 - **Documentación Doxygen obligatoria** (`docs/recetas.md#documentar-código`): `@file`, docstring con qué y
   por qué (regla de negocio y norma), `@param`, `@return`, `@throws`, `@bug <id>` mientras exista el
   problema. `tests/test_documentacion.py` falla si falta algo o si `docs/referencia.md` quedó viejo.
-- Docs y docstrings en español; commits y PR en inglés (como el historial).
+- Idioma: en `payroll_arg` y `payroll_arg_attendance`, docs y docstrings en español; commits y PR en
+  inglés. En `payroll_arg_reportes` (librería) **todo en inglés**: comentarios, docstrings y commits.
 - Cambio de comportamiento visible para el liquidador = actualizar la guía de usuario y su escenario.
