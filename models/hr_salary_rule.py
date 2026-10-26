@@ -1,7 +1,18 @@
+"""@file
+Regla salarial (`hr.salary.rule`) con los datos que pide ARCA: tipo de concepto (define en qué total del
+recibo cae), código de concepto del Libro de Sueldos Digital y unidad.
+"""
 from odoo import api, fields, models
 
 
 class HrSalaryRule(models.Model):
+    """Regla salarial con tipo de concepto AFIP, código LSD y unidad.
+
+    El *Tipo de Concepto* es el que decide el total: 1 remunerativo, 2 no remunerativo, 3 retención,
+    4 contribución patronal o totalizador (ver `hr.payslip._compute_totals_arg()`). La categoría de la
+    regla (REM, NOREM, DED, COMP…) es la que suman las fórmulas (`categories.REM`).
+    """
+
     _inherit = "hr.salary.rule"
 
     tipo_concepto = fields.Selection(
@@ -36,6 +47,8 @@ class HrSalaryRule(models.Model):
 
     @api.onchange("tipo_concepto")
     def _onchange_tipo_concepto(self):
+        """Propone la categoría del módulo que corresponde al tipo de concepto (1 → REM, 2 → NOREM,
+        3 → DED, 4 → COMP), para que el total y la fórmula coincidan."""
         mapping = {
             "1": "payroll_arg.cat_rem",
             "2": "payroll_arg.cat_norem",
@@ -49,6 +62,7 @@ class HrSalaryRule(models.Model):
 
     @api.onchange("category_id")
     def _onchange_category_id(self):
+        """Si la regla no tiene tipo de concepto, lo deduce del código de la categoría."""
         if self.category_id and not self.tipo_concepto:
             code = (self.category_id.code or "").upper()
             mapping = {

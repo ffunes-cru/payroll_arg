@@ -44,6 +44,8 @@
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Jornalizados: horas normales del período × valor hora (contract.wage).
+# HS_NORM viene del calendario (88 hs por quincena) o de las fichadas (payroll_arg_attendance).
 result_qty = inp('HS_NORM')
 result = contract.wage
             </field>
@@ -64,6 +66,8 @@ result = inp('FERIADO') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Feriado pago (Art. 166 LCT): horas del feriado en día laborable × valor hora.
+# Ver C14 en docs/revision.md (horas promedio en lugar de las del día).
 result_qty = inp('FERIADO')
 result = contract.wage
             </field>
@@ -84,6 +88,8 @@ result = inp('OBJETIVOS') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Importe fijo cargado como novedad. Remunerativo, fuera de la base de antigüedad.
+# Ver E2: sin código de concepto LSD (afip_code 0).
 result = inp('OBJETIVOS')
             </field>
         </record>
@@ -103,6 +109,8 @@ result = inp('PREMIO_PROD') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Premio por producción: importe fijo cargado como novedad. Remunerativo, fuera de la base
+# de antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
 result = inp('PREMIO_PROD')
             </field>
         </record>
@@ -122,6 +130,8 @@ result = inp('PRESENTISMO') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Presentismo: importe fijo cargado como novedad. Remunerativo, fuera de la base de
+# antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
 result = inp('PRESENTISMO')
             </field>
         </record>
@@ -141,6 +151,7 @@ result = inp('PORTITULO') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Adicional por título: importe fijo cargado como novedad. Ver E2: sin código LSD.
 result = inp('PORTITULO')
             </field>
         </record>
@@ -160,6 +171,7 @@ result = inp('HS_EXT50') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Horas extras en días hábiles: valor hora con recargo del 50% (Art. 201 LCT).
 result_qty = inp('HS_EXT50')
 result = contract.wage * 1.5
             </field>
@@ -180,6 +192,8 @@ result = inp('HS_EXT100') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Horas extras en sábados después de las 13, domingos y feriados: recargo del 100%
+# (Art. 201 LCT).
 result_qty = inp('HS_EXT100')
 result = contract.wage * 2.0
             </field>
@@ -201,6 +215,7 @@ result = inp('VAC_DIAS') > 0
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # Vacaciones Jornal — Art. 155 LCT: valor_hora × horas_diarias × plus vacacional 20% × días
+# Ver C1 (doble pago con lote de Vacaciones), C16 (antigüedad) y C17 (factor 1,20).
 hours_per_day = contract.resource_calendar_id.hours_per_day or 8.0
 result_qty = inp('VAC_DIAS')
 result = contract.wage * hours_per_day * 1.20
@@ -223,6 +238,7 @@ result = contract.wage * hours_per_day * 1.20
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # Sueldo Básico Mensual — base legal 30 días (LCT) menos días de vacaciones
+# El valor día es sueldo / 30 con 4 decimales, así 30 días dan el sueldo exacto.
 result_qty = max(0.0, 30.0 - inp('VAC_DIAS'))
 result = contract.wage / 30.0
             </field>
@@ -244,6 +260,7 @@ result = inp('VAC_DIAS') > 0
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # Vacaciones Mensual — Art. 155 LCT (divisor configurable por CCT, default 25)
+# Ver C1 (doble pago con lote de Vacaciones) y C16 (sólo sobre el básico).
 divisor = contract.cct_id.vacation_divisor or 25.0
 result_qty = inp('VAC_DIAS')
 result = contract.wage / divisor
@@ -267,6 +284,7 @@ result = payslip.antiguedad_anios > 0 and bool(contract.is_convencionado)
             <field name="amount_python_compute">
 # 1% por año sobre las horas pagadas a valor hora (normales + feriados + extras con su
 # recargo); premios y presentismo quedan afuera. Mensualizados: remunerativo hasta aquí.
+# CCT UOM 260/75: 1% por año de antigüedad (payslip.antiguedad_anios). Ver C16.
 if contract.wage_type == 'hourly':
     horas = inp('HS_NORM') + inp('FERIADO') + inp('HS_EXT50') * 1.5 + inp('HS_EXT100') * 2.0
     base = horas * contract.wage
@@ -292,6 +310,8 @@ result = inp('ASIG_NO_REM') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Suma no remunerativa de acuerdo salarial: sin aportes jubilatorios ni contribuciones;
+# paga aporte de Obra Social y cuota sindical (RET_OS, RET_SIND).
 result = inp('ASIG_NO_REM')
             </field>
         </record>
@@ -311,6 +331,7 @@ result = inp('GRATIF_NO_REM') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Gratificación extraordinaria no remunerativa (mismo tratamiento que ASIG_NO_REM).
 result = inp('GRATIF_NO_REM')
             </field>
         </record>
@@ -330,6 +351,7 @@ result = inp('COMPENS_NO_REM') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Compensación extraordinaria no remunerativa (mismo tratamiento que ASIG_NO_REM).
 result = inp('COMPENS_NO_REM')
             </field>
         </record>
@@ -347,6 +369,7 @@ result = inp('COMPENS_NO_REM')
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Totalizador del bruto remunerativo (categoría GROSS: no entra en los totales argentinos).
 result = categories.REM
             </field>
         </record>
@@ -363,6 +386,8 @@ result = categories.REM
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Aporte jubilatorio SIPA (11%, Ley 24.241) sobre el remunerativo con tope imponible (Art. 9):
+# medio tope en quincenas, ver hr.payslip._get_tope_imponible(). Ver C9 (tope del SAC).
 base = min(categories.REM, payroll.tope) if payroll.tope > 0 else categories.REM
 rate = payslip.company_id.jubilacion_contrib_rate
 if not rate:
@@ -384,6 +409,7 @@ result = - base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Aporte Ley 19.032 / PAMI (3%) sobre la misma base topeada que la jubilación.
 base = min(categories.REM, payroll.tope) if payroll.tope > 0 else categories.REM
 rate = payslip.company_id.inssjp_contrib_rate
 if not rate:
@@ -405,6 +431,8 @@ result = - base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Aporte de Obra Social (3%, Ley 23.660): remunerativo topeado + no remunerativo.
+# Ver C7: hoy incluye las indemnizaciones de la liquidación final.
 base_rem = min(categories.REM, payroll.tope) if payroll.tope > 0 else categories.REM
 rate = payslip.company_id.os_worker_rate
 if not rate:
@@ -429,6 +457,8 @@ result = bool(contract.is_convencionado)
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Cuota sindical (alícuota del convenio; UOM 2,5%) sobre remunerativo + no remunerativo.
+# Ver C19 (corresponde a afiliados) y C7 (indemnizaciones).
 rate = contract.cct_id.union_rate
 if not rate:
     raise ValueError("Falta configurar la alícuota de Cuota Sindical en el convenio de " + str(employee.name))
@@ -449,6 +479,9 @@ result = - (categories.REM + categories.NOREM)
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Ganancias 4ta categoría, método acumulativo de la RG 4003: ver
+# hr.payslip._calculate_ganancias_from_rules(). categories.DED en este punto = jubilación +
+# INSSJP + obra social + sindicato. Ver C2, C3, C4 en docs/revision.md.
 ret_val = payslip._calculate_ganancias_from_rules(categories.REM, categories.DED)
 result = - abs(round(ret_val, 2)) if ret_val > 0 else 0.0
             </field>
@@ -470,6 +503,8 @@ result = (is_uom or bool(contract.is_convencionado)) and not payroll.is_q1
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Seguro de vida y sepelio UOM a cargo del trabajador: cuota fija mensual, una vez por
+# mes (no en la 1° quincena). Ver C18 (condición) en docs/revision.md.
 fee = payslip.company_id.uom_life_insurance_employee_fee
 if not fee:
     raise ValueError("Falta configurar el Seguro de Vida UOM (trabajador) en la compañía " + str(payslip.company_id.name or ''))
@@ -492,6 +527,8 @@ result = inp('APORTE_ADIC_SS') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Aporte adicional voluntario de Seguridad Social: monto fijo de la ficha del empleado,
+# cargado sólo en 2° Quincena y Mensual (una vez por mes).
 result = - inp('APORTE_ADIC_SS')
             </field>
         </record>
@@ -511,6 +548,7 @@ result = inp('CANT_VIANDAS') > 0 and inp('PRECIO_VIANDA') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Descuento de comedor autorizado por el trabajador: cantidad de viandas × precio unitario.
 result_qty = inp('CANT_VIANDAS')
 result = - inp('PRECIO_VIANDA')
             </field>
@@ -526,14 +564,18 @@ result = - inp('PRECIO_VIANDA')
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Neto a cobrar = remunerativo + no remunerativo + retenciones (las retenciones son negativas).
 result = categories.REM + categories.NOREM + categories.DED
             </field>
         </record>
 
         <!-- ======================================================== -->
         <!-- CONTRIBUCIONES PATRONALES (DESGLOSADAS CCT UOM / AFIP)   -->
-        <!-- Se calculan únicamente en 2° Quincena y liquidaciones    -->
-        <!-- mensuales. En 1° Quincena no aplican contribuciones.     -->
+        <!-- Se calculan en todas las liquidaciones. En las quincenas  -->
+        <!-- de jornalizados la base es el remunerativo del último     -->
+        <!-- mes declarado (cuadro de costo del recibo real): Q1 y Q2  -->
+        <!-- repiten el costo del mes (ver C20 en docs/revision.md).   -->
+        <!-- Sólo los seguros de vida UOM se saltean la 1° Quincena.   -->
         <!-- ======================================================== -->
 
         <!-- 1. Contribución ART (Variable según póliza ART) -->
@@ -546,6 +588,9 @@ result = categories.REM + categories.NOREM + categories.DED
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución ART: alícuota variable de la póliza. Base: en quincenas de jornalizados, el
+# remunerativo del último mes declarado (payroll.prev_gross, cuadro de costo del recibo); en
+# el resto, el remunerativo del recibo. Ver C12 (falta la cuota fija) y C20 (dos quincenas).
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 rate = payslip.company_id.art_variable_rate
 if not rate:
@@ -565,6 +610,8 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución SIPA (10,77% de la alícuota total del 18%, Ley 27.541) sobre la base menos
+# la detracción mensual, × coeficiente SS. Ver C11 (detracción en SAC / vacaciones / final).
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 base = max(0.0, base - payroll.detraccion_sipa)
 rate = payslip.company_id.jubilacion_patronal_rate
@@ -588,6 +635,8 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución de Obra Social (6%, Ley 23.660) × coeficiente OS.
+# Ver C8: no incluye las sumas no remunerativas de convenio.
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 rate = payslip.company_id.os_patronal_rate
 if not rate:
@@ -610,6 +659,8 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución Asignaciones Familiares (4,70%, Ley 24.714) × coeficiente SS.
+# Ver C11: la Ley 27.430 art. 167 también aplica la detracción a esta contribución.
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 rate = payslip.company_id.aaff_patronal_rate
 if not rate:
@@ -632,6 +683,8 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución Fondo Nacional de Empleo (0,94%, Ley 24.013) × coeficiente SS.
+# Ver C11: la Ley 27.430 art. 167 también aplica la detracción a esta contribución.
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 rate = payslip.company_id.fne_patronal_rate
 if not rate:
@@ -654,6 +707,7 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Contribución Ley 19.032 / PAMI (1,59%) sobre la base menos la detracción, × coeficiente SS.
 base = payroll.prev_gross if (contract.wage_type == 'hourly' and payroll.prev_gross > 0) else categories.REM
 base = max(0.0, base - payroll.detraccion_sipa)
 rate = payslip.company_id.inssjp_patronal_rate
@@ -677,6 +731,8 @@ result = base
             <field name="condition_select">none</field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Seguro Colectivo de Vida Obligatorio (Dec. 1567/74): prima fija mensual por trabajador.
+# Ver C20: se cobra en las dos quincenas del mes.
 fee = payslip.company_id.life_insurance_fee
 if not fee:
     raise ValueError("Falta configurar el Seguro Colectivo de Vida Obligatorio SCVO en la compañía " + str(payslip.company_id.name or ''))
@@ -698,6 +754,8 @@ result = (is_uom or bool(contract.is_convencionado)) and not payroll.is_q1
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Seguro de vida y sepelio UOM a cargo del empleador: cuota fija mensual (no en la 1°
+# quincena). Ver C18 en docs/revision.md.
 fee = payslip.company_id.uom_life_insurance_fee
 if not fee:
     raise ValueError("Falta configurar el Seguro de Vida UOM en la compañía " + str(payslip.company_id.name or ''))
@@ -810,6 +868,8 @@ result = fee
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # SAC — 50% de la mayor remuneración mensual del semestre (Ley 23.041), proporcional a días
+# SAC_BASE se carga a mano (si no, el sueldo actual). Ver C9 (tope) y C10 (base).
+# Ver C23: la proporción va en la cantidad, que se guarda con 2 decimales.
 dias_sem = inp('SAC_DIAS') or 180.0
 result_qty = min(1.0, max(0.0, dias_sem / 180.0))
 result = (inp('SAC_BASE') or contract.wage) * 0.50
@@ -829,6 +889,9 @@ result = (inp('SAC_BASE') or contract.wage) * 0.50
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # SAC Jornal — 50% de la remuneración mensual habitual semestral
+# Sin SAC_BASE estima con valor hora × horas semanales × 4,333: deja afuera extras, premios
+# y antigüedad. Ver C10 en docs/revision.md.
+# Ver C23: la proporción va en la cantidad, que se guarda con 2 decimales.
 hours_weekly = contract.resource_calendar_id.hours_per_week or 44.0
 base_rem = inp('SAC_BASE') or contract.wage * hours_weekly * 4.333
 dias_sem = inp('SAC_DIAS') or 180.0
@@ -855,6 +918,8 @@ result = inp('VAC_NO_GOZ') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Vacaciones no gozadas al egreso (Art. 156 LCT): días proporcionales × sueldo / divisor
+# del convenio (25 por defecto, Art. 155 LCT). Ver C22: no son remuneración (Art. 7 Ley 24.241).
 divisor = contract.cct_id.vacation_divisor or 25.0
 result_qty = inp('VAC_NO_GOZ')
 result = contract.wage / divisor
@@ -876,6 +941,8 @@ result = inp('VAC_NO_GOZ') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Vacaciones no gozadas de jornalizados: días × valor hora × horas por día × 1,20
+# (ver C17 en docs/revision.md). Ver C22: no son remuneración (Art. 7 Ley 24.241).
 hours_per_day = contract.resource_calendar_id.hours_per_day or 8.0
 result_qty = inp('VAC_NO_GOZ')
 result = contract.wage * hours_per_day * 1.20
@@ -897,6 +964,9 @@ result = inp('SAC_DIAS') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# SAC proporcional al egreso (Art. 123 LCT): 50% de la mejor remuneración mensual del
+# semestre × días trabajados / 180. Ver C10 y C21 en docs/revision.md.
+# Ver C23: la proporción va en la cantidad, que se guarda con 2 decimales.
 result_qty = min(1.0, max(0.0, inp('SAC_DIAS') / 180.0))
 result = (inp('SAC_BASE') or contract.wage) * 0.50
             </field>
@@ -917,6 +987,9 @@ result = inp('SAC_DIAS') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# SAC proporcional al egreso de jornalizados (ver SAC_PROP_MENS). Sin SAC_BASE estima
+# la remuneración mensual con valor hora × horas semanales × 4,333 (ver C10).
+# Ver C23: la proporción va en la cantidad, que se guarda con 2 decimales.
 hours_weekly = contract.resource_calendar_id.hours_per_week or 44.0
 base_rem = inp('SAC_BASE') or contract.wage * hours_weekly * 4.333
 result_qty = min(1.0, max(0.0, inp('SAC_DIAS') / 180.0))
@@ -939,6 +1012,8 @@ result = inp('INDEM_ANTIG') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Indemnización por antigüedad (Art. 245 LCT): importe calculado fuera del sistema.
+# No remunerativa y exenta de aportes y de Ganancias. Ver C7 y C21.
 result = inp('INDEM_ANTIG')
             </field>
         </record>
@@ -958,6 +1033,8 @@ result = inp('INDEM_PREAV') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Indemnización sustitutiva del preaviso (Art. 232 LCT): importe calculado fuera del
+# sistema. Ver C7 y C21 (falta el SAC sobre el preaviso).
 result = inp('INDEM_PREAV')
             </field>
         </record>
@@ -977,6 +1054,8 @@ result = inp('INTEG_MES') > 0
             </field>
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
+# Integración del mes de despido (Art. 233 LCT): importe calculado fuera del sistema.
+# Ver C7 y C21 (falta el SAC sobre la integración).
 result = inp('INTEG_MES')
             </field>
         </record>

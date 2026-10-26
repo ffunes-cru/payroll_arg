@@ -1,3 +1,9 @@
+"""@file
+Punto de entrada del módulo `payroll_arg`: hace importable la librería `py_arg_reports` (submódulo
+`payroll_arg_reportes`) y carga modelos y asistentes.
+
+Ver README.md y docs/ para la documentación funcional y técnica.
+"""
 import sys
 from pathlib import Path
 

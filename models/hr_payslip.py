@@ -1,3 +1,21 @@
+"""@file
+Recibo de sueldo argentino (`hr.payslip`): novedades, parámetros de las reglas, Ganancias,
+datos para el Libro de Sueldos Digital, el F.931 y el recibo PDF.
+
+Flujo de un recibo (ver docs/flujos.md y docs/liquidacion.md):
+
+1. Al crearse (o al cambiar de estructura) recibe **todas** las entradas de su estructura con el valor
+   automático del período (`_prepare_input_lines()`): horas del calendario, feriados, vacaciones
+   aprobadas, deducciones SIRADIG y valores fijados en el lote.
+2. El usuario corrige las entradas (en el recibo o en la matriz del lote).
+3. `compute_sheet()` evalúa las reglas salariales. Las reglas leen las entradas con `inp('CÓDIGO')` y los
+   parámetros de la compañía / lote con `payroll.<clave>` (`get_payroll_dict()`); nunca modifican las
+   entradas.
+4. Los totales argentinos (remunerativo, no remunerativo, retenciones, contribuciones) se calculan
+   sumando las líneas según el *Tipo de Concepto AFIP* de su regla (`_compute_totals_arg()`).
+5. Las exportaciones leen las líneas calculadas: `_get_afip_info_f931()`,
+   `_get_conceptos_liquidados_lsd()` y `_to_recibo_dict()`.
+"""
 import base64
 import calendar
 import logging
@@ -16,14 +34,19 @@ from .hr_contract import DIAS_BASE_MENSUAL_LCT
 
 _logger = logging.getLogger(__name__)
 
+## Zona horaria por defecto para convertir fechas de licencias y feriados (la planta está en Córdoba).
 DEFAULT_TZ = "America/Argentina/Cordoba"
+## Tipos de lote quincenales: usan medio tope imponible y la base de contribuciones del mes anterior.
 QUINCENA_TYPES = ("1° Quincena", "2° Quincena", "Quincenal")
+## Tipos de lote que usan una estructura propia (no la del contrato).
 SPECIALIZED_RUN_TYPES = ("Vacaciones", "SAC", "Liquidación Final")
-# Parte de Obra Social que va al Fondo Solidario de Redistribución (ANSSAL) en el F.931
+## Parte de Obra Social que va al Fondo Solidario de Redistribución (ANSSAL) en el F.931
 ANSSAL_SHARE = 0.15
-# Agrupación de conceptos en los importes del F.931
+## Conceptos que el F.931 agrupa como "Vacaciones".
 F931_VACACIONES_CODES = ("VACACIONES", "VACACIONES_MENSUAL", "VAC_NO_GOZ_MENS", "VAC_NO_GOZ_JORNAL")
+## Conceptos que el F.931 agrupa como "Horas extras".
 F931_HS_EXTRAS_CODES = ("HS_EXT_50", "HS_EXT_100")
+## Conceptos que el F.931 agrupa como "SAC".
 F931_SAC_CODES = ("SAC_MENSUAL", "SAC_JORNAL", "SAC_PROP_MENS", "SAC_PROP_JORNAL")
 
 
@@ -176,16 +199,28 @@ class HrPayslip(models.Model):
 
     @api.depends("contract_id.wage")
     def _compute_contract_wage(self):
+        """Básico del contrato para mostrar en el recibo.
+
+        Sueldo mensual (mensualizados) o valor hora (jornalizados), según `wage_type`.
+        """
         for slip in self:
             slip.contract_wage = slip.contract_id.wage
 
     @api.depends("payslip_run_id.payment_date", "date_to")
     def _compute_payment_date(self):
+        """Fecha de pago del recibo (Art. 140 LCT, se imprime en el recibo y va al LSD): la del lote; sin
+        lote, el último día del período. Editable a mano."""
         for slip in self:
             slip.payment_date = slip.payslip_run_id.payment_date or slip.date_to or slip.payment_date
 
     @api.depends("line_ids.amount", "line_ids.code", "total_remunerativo")
     def _compute_base_imponible_seg_social(self):
+        """Base imponible de Seguridad Social realmente usada y si se aplicó el tope.
+
+        Se lee de la línea `RET_JUB` (su importe unitario es la base ya topeada); si la regla no está, la
+        base es el remunerativo completo. `is_tope_applied` marca los recibos donde el tope imponible
+        (Art. 9 Ley 24.241) recortó la base.
+        """
         for slip in self:
             jub = slip.line_ids.filtered(lambda l: l.code == "RET_JUB")[:1]
             base = abs(jub.amount) if jub else slip.total_remunerativo
@@ -194,6 +229,8 @@ class HrPayslip(models.Model):
 
     @api.depends("line_ids", "line_ids.total", "ganancias_override")
     def _compute_ganancias_fields(self):
+        """Resumen de Ganancias del recibo para la vista y los filtros: importe retenido (línea
+        `RET_GANANCIAS` o el override manual), si retiene y un texto de estado."""
         for slip in self:
             line = slip.line_ids.filtered(lambda l: l.code == "RET_GANANCIAS")
             amt = abs(line[0].total) if line else 0.0
@@ -209,6 +246,13 @@ class HrPayslip(models.Model):
                 slip.ganancias_status = "Exento / No Alcanzado"
 
     def _get_antiguedad_start_date(self):
+        """Fecha desde la que se cuenta la antigüedad (Art. 18 LCT: tiempo de servicio con el empleador).
+
+        Cascada: inicio del contrato del recibo → inicio de contrato / primer contrato del empleado →
+        fecha de la versión del contrato.
+
+        @return date, o False si no hay ninguna fecha cargada.
+        """
         self.ensure_one()
         contract = self.contract_id
         emp = self.employee_id
@@ -221,6 +265,14 @@ class HrPayslip(models.Model):
 
     @api.depends("antiguedad_override", "antiguedad_anios_manual", "contract_id", "employee_id", "date_to")
     def _compute_antiguedad_anios(self):
+        """Años completos de antigüedad al último día del período: base del Adicional por Antigüedad
+        (regla `ADIC_ANTIG`, 1% por año en el CCT UOM 260/75). Con *Override Antigüedad* se usan los
+        años cargados a mano (p. ej. antigüedad reconocida de otro empleador del grupo).
+
+        @bug T4 (docs/revision.md): el campo es guardado y no depende de la fecha de ingreso del
+             contrato; si esa fecha se corrige, el recibo conserva los años viejos hasta que cambie otra
+             dependencia.
+        """
         for slip in self:
             if slip.antiguedad_override:
                 slip.antiguedad_anios = slip.antiguedad_anios_manual
@@ -233,6 +285,18 @@ class HrPayslip(models.Model):
 
     @api.depends("line_ids", "line_ids.total", "line_ids.category_id.code")
     def _compute_totals_arg(self):
+        """Totales argentinos del recibo según el *Tipo de Concepto AFIP* de cada regla.
+
+        - 1 Remunerativo → `total_remunerativo` (sujeto a aportes y contribuciones).
+        - 2 No Remunerativo → `total_no_remunerativo`.
+        - 3 Retención / Descuento → `total_retenciones` (en positivo).
+        - 4 o categoría COMP → `total_contribuciones` (costo del empleador, no afecta el neto).
+
+        Neto = remunerativo + no remunerativo − retenciones. Costo empleador = remunerativo + no
+        remunerativo + contribuciones. Se suman los importes **sin redondear** y se redondea el total,
+        igual que el recibo oficial (si no, el costo difiere en centavos). Las líneas totalizadoras
+        GROSS y NET se ignoran.
+        """
         for slip in self:
             rem = 0.0
             no_rem = 0.0
@@ -265,6 +329,7 @@ class HrPayslip(models.Model):
 
     @api.depends("line_ids", "line_ids.total", "line_ids.category_id.code")
     def _compute_contribucion_lines(self):
+        """Líneas de contribuciones patronales (categoría COMP), para la pestaña aparte del recibo."""
         for slip in self:
             slip.contribucion_line_ids = slip.line_ids.filtered(
                 lambda l: (l.category_id.code or "").upper() == "COMP"
@@ -276,7 +341,10 @@ class HrPayslip(models.Model):
 
     def _get_context_run(self):
         """Lote del recibo; durante la generación masiva el recibo todavía no existe y el
-        lote llega por contexto (asistente ``hr.payslip.employees``)."""
+        lote llega por contexto (asistente ``hr.payslip.employees``).
+
+        @return hr.payslip.run (puede ser vacío).
+        """
         if len(self) == 1 and self.payslip_run_id:
             return self.payslip_run_id
         ctx = self.env.context
@@ -287,7 +355,16 @@ class HrPayslip(models.Model):
     @api.model
     def _get_struct_for(self, contract, run, struct=False):
         """Estructura a usar: la especializada si el lote es Vacaciones / SAC / Liquidación
-        Final; si no, la indicada, la del contrato o la default por tipo de salario."""
+        Final; si no, la indicada, la del contrato o la default por tipo de salario.
+
+        Así un mismo lote de Vacaciones o SAC sirve para jornalizados y mensualizados: cada recibo toma
+        la variante de su tipo de salario (p. ej. `SAC_JORNAL_ARG` o `SAC_MENSUAL_ARG`).
+
+        @param contract Contrato (`hr.version`) del recibo.
+        @param run Lote (`hr.payslip.run`, puede ser vacío).
+        @param struct Estructura pedida explícitamente (la del lote o la elegida en el recibo).
+        @return hr.payroll.structure (puede ser vacío si no hay ninguna configurada).
+        """
         tipo = run.tipo_liquidacion if run else None
         wage_type = contract.wage_type or "monthly"
         Version = self.env["hr.version"]
@@ -299,6 +376,15 @@ class HrPayslip(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        """Crea recibos completando contrato y estructura, y les agrega todas las entradas.
+
+        Sin contrato, toma el primero vigente en el período; la estructura se resuelve con
+        `_get_struct_for()`. Después de crear, `_ensure_input_lines()` agrega las entradas que falten
+        (recibos creados por importación, XML o código).
+
+        @param vals_list Lista de diccionarios de valores.
+        @return Recibos creados.
+        """
         for vals in vals_list:
             if not vals.get("employee_id"):
                 continue
@@ -322,6 +408,11 @@ class HrPayslip(models.Model):
         return slips
 
     def write(self, vals):
+        """Al cambiar la estructura, agrega las entradas de la estructura nueva que falten.
+
+        @param vals Valores a escribir.
+        @return True.
+        """
         res = super().write(vals)
         if "struct_id" in vals:
             self._ensure_input_lines()
@@ -336,7 +427,13 @@ class HrPayslip(models.Model):
         """Una línea por código de entrada de la estructura, con el valor automático ya cargado.
 
         Precedencia: valor del lote (``hr.payslip.run.novelty``) > valor del período
-        (``_get_period_input_amounts``) > 0.
+        (``_get_period_input_amounts``) > 0. La llama el módulo `payroll` al cambiar empleado o
+        estructura en el formulario.
+
+        @param contracts Contratos vigentes del empleado (se usa el primero).
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @return Lista de diccionarios de `hr.payslip.input`.
         """
         if not contracts:
             return []
@@ -349,7 +446,16 @@ class HrPayslip(models.Model):
     @api.model
     def _prepare_input_lines(self, contract, struct, date_from, date_to, run, skip_codes=()):
         """Valores de las líneas de entrada de la estructura (una por código), con el valor
-        automático cargado. ``skip_codes``: códigos que ya existen en el recibo."""
+        automático cargado. ``skip_codes``: códigos que ya existen en el recibo.
+
+        @param contract Contrato del recibo.
+        @param struct Estructura salarial (se incluyen las reglas de las estructuras padre).
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @param run Lote (puede ser vacío).
+        @param skip_codes Códigos a omitir porque el recibo ya los tiene.
+        @return Lista de diccionarios de `hr.payslip.input` (sin `payslip_id`).
+        """
         rule_inputs = struct.get_structure_with_parents().get_all_rules().input_ids
         amounts = self._get_period_input_amounts(contract, date_from, date_to, run)
         amounts.update(run._get_novelty_amounts())
@@ -371,7 +477,11 @@ class HrPayslip(models.Model):
 
     def _ensure_input_lines(self):
         """Agrega, con su valor automático, las entradas de la estructura que le falten al
-        recibo (recibos creados por importación, datos XML o código). No toca las existentes."""
+        recibo (recibos creados por importación, datos XML o código). No toca las existentes.
+
+        Sólo recibos editables (borrador / en espera) con contrato y estructura. Garantiza que la matriz
+        de novedades del lote tenga una celda por empleado y código.
+        """
         vals_list = []
         for slip in self.filtered(lambda s: s.contract_id and s.struct_id and s.state in ("draft", "verify")):
             struct_codes = set(slip.struct_id.get_structure_with_parents().get_all_rules().input_ids.mapped("code"))
@@ -390,7 +500,28 @@ class HrPayslip(models.Model):
         """Valores automáticos de las novedades que se derivan del período, el calendario,
         las licencias aprobadas y la ficha del empleado. Punto de extensión (asistencias).
 
-        :return: dict {código de entrada: importe}
+        Reglas de negocio:
+        - `DED_SIRADIG`: deducción mensual estimada del F.572 (ficha del empleado), en todos los lotes.
+        - Lote SAC: nada más (el SAC no lleva horas ni vacaciones).
+        - `VAC_DIAS`: días corridos de vacaciones aprobadas dentro del período (Art. 151 LCT).
+        - `APORTE_ADIC_SS`: monto fijo de la ficha, sólo en 2° Quincena y Mensual (una vez por mes).
+        - Jornalizados (salvo lote de Vacaciones): `HS_NORM` = horas del calendario − vacaciones, y
+          `FERIADO` = feriados en días laborables × horas por día (Art. 166 LCT: el feriado se paga).
+
+        `payroll_arg_attendance` lo extiende para tomar `HS_NORM` y extras de las fichadas.
+
+        @param contract Contrato del recibo.
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @param run Lote (puede ser vacío).
+        @return dict {código de entrada: importe}
+
+        @bug C1 (docs/revision.md): `VAC_DIAS` se carga también en quincenas y mensuales aunque esas
+             vacaciones ya se hayan pagado en un lote de Vacaciones: se pagan dos veces.
+        @bug C13: resta días **corridos** × horas promedio (incluye sábados y domingos); una semana de
+             vacaciones descuenta 61,6 hs en lugar de 44.
+        @bug C14: el feriado vale `hours_per_day` (8,8 promedio) y no las horas de ese día del calendario
+             (9 hs un lunes, como en el recibo real).
         """
         employee = contract.employee_id
         tipo = run.tipo_liquidacion if run else None
@@ -413,7 +544,13 @@ class HrPayslip(models.Model):
         return vals
 
     def _set_input_amounts(self, amounts):
-        """Escribe importes en las líneas de entrada por código, creando las que falten."""
+        """Escribe importes en las líneas de entrada por código, creando las que falten.
+
+        Una línea nueva sólo se crea si el importe no es 0. Los códigos que no existen en la estructura
+        igual se crean (con el nombre del `hr.rule.input` si existe), aunque ninguna regla los lea.
+
+        @param amounts dict {código: importe}.
+        """
         rule_inputs = self.env["hr.rule.input"]
         for slip in self:
             by_code = {line.code: line for line in slip.input_line_ids}
@@ -436,8 +573,15 @@ class HrPayslip(models.Model):
                 self.env["hr.payslip.input"].create(to_create)
 
     def action_reload_period_inputs(self):
-        """Vuelve a leer calendario, licencias, asistencias y ficha del empleado y pisa
-        las entradas automáticas. Los códigos con valor fijado en el lote no se tocan."""
+        """Vuelve a leer calendario, licencias, asistencias y ficha, y pisa las entradas automáticas.
+
+        Los códigos con valor fijado en el lote no se tocan.
+
+        Botón *Recargar Novedades del Período* (recibo y lote). Pisa también lo que el usuario haya
+        corregido a mano en esos códigos (`HS_NORM`, `FERIADO`, `VAC_DIAS`, `DED_SIRADIG`, …).
+
+        @return True.
+        """
         self._ensure_input_lines()
         for slip in self.filtered(lambda s: s.state in ("draft", "verify") and s.contract_id):
             run = slip.payslip_run_id
@@ -453,7 +597,20 @@ class HrPayslip(models.Model):
 
     @api.model
     def _get_calendar_hours_for_period(self, calendar, date_from, date_to):
-        """Horas teóricas del período según el calendario de trabajo."""
+        """Horas teóricas del período según el calendario de trabajo.
+
+        Horas semanales = suma de las franjas del calendario (sin almuerzo; si hay franjas duplicadas
+        para el mismo día y turno, se toma la mayor). Un período de hasta 16 días es una quincena y vale
+        **dos semanas** (44 hs × 2 = 88 hs, convención de los recibos reales); uno más largo, las horas
+        semanales × días / 7.
+
+        @param calendar Calendario (`resource.calendar`) del contrato.
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @return Horas (float, 1 decimal).
+
+        @bug C15 (docs/revision.md): la quincena vale siempre 88 hs, tenga 10, 11 o 12 días hábiles.
+        """
         if not calendar or not date_from or not date_to:
             return 0.0
 
@@ -486,6 +643,12 @@ class HrPayslip(models.Model):
 
         Detecta vacaciones por el tipo ``payroll_arg.holiday_status_vacaciones_lct``,
         por código VAC / VACACIONES o por nombre conteniendo 'vacac' / 'vacat'.
+        Cuenta días **corridos** (Art. 151 LCT), recortando cada licencia a las fechas del período.
+
+        @param employee Empleado.
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @return Días (float).
         """
         if not employee or not date_from or not date_to:
             return 0.0
@@ -518,7 +681,21 @@ class HrPayslip(models.Model):
 
     @api.model
     def _get_calendar_public_holidays_count(self, cal, employee, date_from, date_to):
-        """Cantidad de feriados (hojas globales del calendario) en días laborables del período."""
+        """Cantidad de feriados (hojas globales del calendario) en días laborables del período.
+
+        Feriados = ausencias globales (`resource.calendar.leaves` sin recurso) del calendario o de
+        todos los calendarios. Sólo cuentan los días de semana en que el calendario tiene horario: el
+        feriado que cae en un día no laborable no se paga aparte (Art. 166 LCT).
+
+        @param cal Calendario del contrato.
+        @param employee Empleado (para su zona horaria si el calendario no tiene).
+        @param date_from Inicio del período.
+        @param date_to Fin del período.
+        @return Cantidad de días (float).
+
+        @bug C24 (docs/revision.md): usa la zona horaria del calendario y los calendarios del módulo no
+             la fijan; un feriado guardado en hora argentina en un calendario en UTC cuenta dos días.
+        """
         if not cal or not date_from or not date_to:
             return 0.0
         tz = pytz.timezone(cal.tz or employee.tz or DEFAULT_TZ)
@@ -547,6 +724,15 @@ class HrPayslip(models.Model):
         """Base de contribuciones de jornalizados quincenales: bruto remunerativo del último
         mes con recibos calculados anterior al período (todas las liquidaciones de ese mes:
         quincenas, SAC, vacaciones, ajustes). Se puede fijar a mano con prev_month_gross_manual.
+
+        Replica el cuadro "Costo Total Empleado" de los recibos reales, que muestra las contribuciones
+        del último mes declarado en el F.931 (las de la quincena todavía no se conocen). Cuentan los
+        recibos en espera o hechos; si un mes no tiene recibos (licencia larga) se sigue hacia atrás.
+
+        @return Importe en pesos (0 si no hay recibos anteriores).
+
+        @bug C8 (docs/revision.md): sólo suma el remunerativo; la Obra Social y el sindicato también
+             contribuyen sobre las sumas no remunerativas de convenio.
         """
         self.ensure_one()
         if self.prev_month_gross_manual > 0:
@@ -568,6 +754,16 @@ class HrPayslip(models.Model):
         return round(sum(slips.mapped("total_remunerativo")), 2)
 
     def _get_tope_imponible(self):
+        """Tope imponible (base máxima, Art. 9 Ley 24.241) de los aportes del trabajador en este recibo.
+
+        El del recibo si se cargó; si no, el de la compañía, **la mitad** en las quincenas (decisión
+        confirmada: cada quincena se topea por separado con medio tope).
+
+        @return Importe en pesos (0 = sin tope).
+
+        @bug C9 (docs/revision.md): un lote de SAC usa el tope mensual completo; para el SAC la base
+             máxima se calcula aparte (a verificar: 50% del tope del mes).
+        """
         self.ensure_one()
         if self.tope_imponible_retenciones:
             return self.tope_imponible_retenciones
@@ -575,7 +771,13 @@ class HrPayslip(models.Model):
         return round(tope / 2.0, 2) if self.tipo_liquidacion in QUINCENA_TYPES else tope
 
     def _get_contrib_coefs(self):
-        """(coef. Seg. Social, coef. Obra Social) del lote o, sin lote, de la compañía."""
+        """(coef. Seg. Social, coef. Obra Social) del lote o, sin lote, de la compañía.
+
+        Multiplican las contribuciones patronales (`result_qty` de las reglas COMP_*): 1 = alícuota
+        plena; los recibos reales usan 0,10 y 0,15.
+
+        @return Tupla (coef_ss, coef_os).
+        """
         self.ensure_one()
         src = self.payslip_run_id or self.company_id
         return src.coef_contrib_ss, src.coef_contrib_os
@@ -585,17 +787,38 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def _get_baselocaldict(self, contracts):
+        """Agrega `inp(código)` al contexto de las reglas salariales: devuelve el importe de la entrada
+        del recibo con ese código (0 si no existe). Es la única forma en que las reglas leen novedades.
+
+        @param contracts Contratos del recibo.
+        @return dict del contexto de evaluación.
+        """
         localdict = super()._get_baselocaldict(contracts)
         amounts = {line.code: line.amount for line in self.input_line_ids if line.code}
 
         def inp(code):
+            """Importe de la entrada `code` del recibo.
+
+            @param code Código de la entrada (p. ej. 'HS_NORM').
+            @return Importe, 0.0 si el recibo no tiene esa entrada.
+            """
             return amounts.get(code, 0.0)
 
         localdict["inp"] = inp
         return localdict
 
     def get_payroll_dict(self, contracts):
-        """Parámetros disponibles en las reglas como ``payroll.<clave>``."""
+        """Parámetros disponibles en las reglas como ``payroll.clave`` (p. ej. ``payroll.tope``).
+
+        - `coef_ss`, `coef_os`: coeficientes de contribuciones (`_get_contrib_coefs()`).
+        - `detraccion_sipa`: detracción mensual Ley 27.541 (compañía).
+        - `tope`: tope imponible de este recibo (`_get_tope_imponible()`).
+        - `prev_gross`: base de contribuciones del mes anterior (sólo quincenas, si no 0).
+        - `is_q1`, `is_q2`: tipo de quincena (p. ej. el seguro de vida UOM no va en la 1°).
+
+        @param contracts Contratos del recibo.
+        @return dict de parámetros.
+        """
         res = super().get_payroll_dict(contracts)
         coef_ss, coef_os = self._get_contrib_coefs()
         res.update({
@@ -612,7 +835,35 @@ class HrPayslip(models.Model):
         return res
 
     def _calculate_ganancias_from_rules(self, cur_gross, cur_mandatory_ret):
-        """Calcula Ganancias acumulativo desde la regla salarial RET_GANANCIAS."""
+        """Calcula Ganancias acumulativo desde la regla salarial RET_GANANCIAS.
+
+        Método acumulativo de la RG 4003 (4ta categoría):
+
+        1. Ganancia bruta acumulada del año = brutos de los meses anteriores (acumuladores) + el de este
+           recibo.
+        2. Menos aportes de ley acumulados (categoría DED calculada hasta la regla) y deducciones
+           generales del SIRADIG (`DED_SIRADIG`).
+        3. Menos deducciones personales del Art. 30 LIG (ganancia no imponible, especial, cónyuge,
+           hijos) **proporcionales al mes**: anual × mes / 12.
+        4. Impuesto acumulado con la escala del Art. 94 también proporcional al mes
+           (`hr.ganancias.scale.calculate_annual_bracket()`).
+        5. Retención del mes = impuesto acumulado − retenciones de los meses anteriores (nunca negativa).
+
+        Guarda el resultado en el acumulador del empleado para ese año y mes (lo crea o lo pisa).
+        Con *Override Retención Ganancias* devuelve el importe manual sin calcular ni guardar nada.
+
+        @param cur_gross Bruto del recibo (hoy `categories.REM`).
+        @param cur_mandatory_ret Aportes de ley del recibo (hoy `categories.DED`, negativo).
+        @return Retención del mes en pesos (positiva).
+
+        @bug C2 (docs/revision.md): el acumulador es uno por mes y se **pisa**: la 2° quincena (o un
+             SAC / vacaciones del mismo mes) borra el bruto y la retención de la 1°, no la resta y los meses
+             siguientes acumulan de menos.
+        @bug C3: el bruto no incluye las sumas no remunerativas (gravadas).
+        @bug C4: el seguro de vida UOM y el aporte adicional se calculan después y no se deducen.
+        @bug C6: ignora pluriempleo, pagos a cuenta, topes de deducciones y devoluciones.
+        @bug T2: escribe el acumulador aunque el recibo quede en borrador o se borre.
+        """
         self.ensure_one()
         if self.ganancias_override > 0:
             return round(self.ganancias_override, 2)
@@ -692,6 +943,13 @@ class HrPayslip(models.Model):
 
     @api.onchange("employee_id", "date_from", "date_to")
     def onchange_employee(self):
+        """Formulario del recibo: fechas del lote y estructura según el contrato y el tipo de lote.
+
+        Completa las fechas vacías con las del lote y, si el contrato pide otra estructura (p. ej. lote
+        de SAC), la cambia y recarga las entradas.
+
+        @return Resultado del onchange de `payroll`.
+        """
         for slip in self:
             run = slip.payslip_run_id
             if run:
@@ -710,6 +968,17 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def _compute_leave_days(self, contract, day_from, day_to):
+        """Líneas de ausencias de *Días trabajados* con códigos argentinos.
+
+        Las ausencias sin código (o GLOBAL) se clasifican por nombre: vacaciones → `VAC`, enfermedad →
+        `ENF`, el resto → `LEAVE`. Horas y días en positivo. Informativo: las reglas no leen estas
+        líneas, leen las entradas.
+
+        @param contract Contrato.
+        @param day_from Inicio del período.
+        @param day_to Fin del período.
+        @return Lista de diccionarios de `hr.payslip.worked_days`.
+        """
         res = super()._compute_leave_days(contract, day_from, day_to)
         fixed_res = []
         for line in res:
@@ -732,6 +1001,14 @@ class HrPayslip(models.Model):
         return fixed_res
 
     def _compute_worked_days(self, contract, day_from, day_to):
+        """Línea de días/horas trabajados descontando vacaciones, licencias y enfermedad. Informativo
+        (las reglas leen las entradas, no estas líneas).
+
+        @param contract Contrato.
+        @param day_from Inicio del período.
+        @param day_to Fin del período.
+        @return Diccionario de la línea de días trabajados.
+        """
         attendances = super()._compute_worked_days(contract, day_from, day_to)
         leaves = self._compute_leave_days(contract, day_from, day_to)
         total_leave_hours = sum(
@@ -752,7 +1029,14 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def compute_sheet(self):
-        """Valida y calcula. No modifica las líneas de entrada."""
+        """Valida y calcula. No modifica las líneas de entrada.
+
+        Antes de calcular completa contrato y estructura si faltan, y frena con un mensaje claro si el
+        recibo no tiene contrato vigente, estructura o sueldo/valor hora.
+
+        @return Resultado de `compute_sheet` de `payroll`.
+        @throws UserError Sin contrato vigente, sin estructura o con básico en 0.
+        """
         for slip in self:
             if not slip.contract_id:
                 slip.contract_id = slip._get_employee_contracts()[:1]
@@ -780,9 +1064,26 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def _line_qty(self, *codes):
+        """Suma de las cantidades de las líneas con esos códigos (horas o días liquidados).
+
+        @param codes Códigos de regla.
+        @return Cantidad total.
+        """
         return sum(self.line_ids.filtered(lambda l: l.code in codes).mapped("quantity"))
 
     def _get_afip_info_f931(self):
+        """Datos del trabajador para el F.931 (SICOSS) y el registro 4 del Libro de Sueldos Digital.
+
+        Tres bloques: `fijos` (CUIL, cónyuge, hijos, condición, actividad, obra social, zona, modalidad,
+        convencionado…), `variables` (situación de revista) e `importes` (bases y conceptos agrupados:
+        sueldo, horas extras, SAC, vacaciones; días u horas trabajadas).
+
+        @return dict con las claves `fijos`, `variables` e `importes`.
+
+        @bug E1 (docs/revision.md): las bases Remuneración 1 a 10 son todas el remunerativo del recibo
+             (sin tope, sin no remunerativo para Obra Social, sin detracción); jornalizados con
+             `k_dias` = 0; valores de relleno (CUIL 20000000000, actividad 049, zona 18…) si faltan datos.
+        """
         self.ensure_one()
         employee = self.employee_id
         contract = self.contract_id
@@ -897,6 +1198,17 @@ class HrPayslip(models.Model):
         return info_f931
 
     def _get_conceptos_liquidados_lsd(self):
+        """Conceptos del recibo para el registro 3 del Libro de Sueldos Digital.
+
+        Una fila por línea con importe (sin totalizadores ni contribuciones), con el código de concepto
+        del empleador (`afip_code` de la regla, o el código de la regla), la cantidad, la unidad y el
+        importe (negativo en las retenciones: el generador lo informa como débito).
+
+        @return Lista de dict {concepto, cantidad, importe, unidades}.
+
+        @bug E2 (docs/revision.md): varias reglas tienen `afip_code` "0" o comparten código (FERIADO y
+             HS_EXT_50 → 130000), y la antigüedad informa cantidad 1 con unidad "%".
+        """
         self.ensure_one()
         conceptos = []
         for line in self.line_ids:
@@ -924,6 +1236,23 @@ class HrPayslip(models.Model):
     # ══════════════════════════════════════════════
 
     def _to_recibo_dict(self, nro_liq=1, tipo_liq="Mensual"):
+        """Datos del recibo de sueldo (Art. 140 LCT) en el formato de `py_arg_reports` (recibo PDF).
+
+        Incluye empresa y último depósito de Seguridad Social (Art. 140 inc. j), empleado, conceptos
+        (cantidad, base e importe por línea), totales y el pie de "Composición salarial": aportes desde
+        las líneas calculadas y contribuciones recalculadas sobre el bruto del recibo, con el 15% de Obra
+        Social para el Fondo Solidario (ANSSAL) agrupado en Seguridad Social como en el F.931.
+
+        @param nro_liq Número de liquidación del mes.
+        @param tipo_liq Tipo de liquidación que se imprime.
+        @return dict del recibo.
+
+        @bug E4 (docs/revision.md): completa con datos inventados lo que falta (CUIT 20123456780,
+             número de calle "100", fecha de ingreso 2020-01-01, categoría "Operario"…), y manda el
+             nombre completo como `first_name`.
+        @bug C8: el pie calcula la contribución de Obra Social sobre remunerativo + no remunerativo,
+             pero la línea `COMP_OS` usa sólo el remunerativo.
+        """
         self.ensure_one()
         emp = self.employee_id
         company = self.company_id
@@ -1007,6 +1336,11 @@ class HrPayslip(models.Model):
         lines_by_code = {line.code: line for line in self.line_ids}
 
         def line_total(code):
+            """Importe (positivo) de la línea con ese código.
+
+            @param code Código de regla.
+            @return Importe, 0.0 si el recibo no tiene esa línea.
+            """
             line = lines_by_code.get(code)
             return abs(line.total) if line else 0.0
 
@@ -1120,7 +1454,14 @@ class HrPayslip(models.Model):
         }
 
     def action_print_recibo_pdf(self):
-        """Genera y descarga el Recibo de Sueldo oficial en PDF para esta liquidación individual."""
+        """Genera y descarga el Recibo de Sueldo oficial en PDF para esta liquidación individual.
+
+        Si el recibo no está calculado lo calcula. Usa el diseño 4 (con contribuciones patronales) de
+        `py_arg_reports` y deja el PDF adjunto al recibo.
+
+        @return Acción de descarga del adjunto.
+        @throws UserError Si la librería no pudo generar el PDF.
+        """
         self.ensure_one()
         if not self.line_ids:
             self.compute_sheet()
@@ -1176,7 +1517,10 @@ class HrPayslip(models.Model):
                     pass
 
     def action_open_export_wizard(self):
-        """Abre el asistente de exportación de reportes para este recibo individual."""
+        """Abre el asistente de exportación de reportes para este recibo individual.
+
+        @return Acción de ventana del asistente `payroll.arg.export.wizard`.
+        """
         self.ensure_one()
         return {
             "name": "Exportar Recibo de Sueldo",
@@ -1192,7 +1536,10 @@ class HrPayslip(models.Model):
         }
 
     def action_open_payslip(self):
-        """Abre la vista formulario del recibo individual."""
+        """Abre la vista formulario del recibo individual (botón de la lista de recibos del lote).
+
+        @return Acción de ventana del recibo.
+        """
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
@@ -1205,6 +1552,8 @@ class HrPayslip(models.Model):
 
 
 class HrPayslipWorkedDays(models.Model):
+    """Líneas de días trabajados con código obligatorio: si no viene, se deduce del nombre."""
+
     _inherit = "hr.payslip.worked_days"
 
     code = fields.Char(
@@ -1216,6 +1565,12 @@ class HrPayslipWorkedDays(models.Model):
 
     @staticmethod
     def _guess_code(name):
+        """Código de una línea de días trabajados según su nombre: vacaciones → VAC, enfermedad → ENF,
+        trabajo normal → WORK100, el resto → LEAVE.
+
+        @param name Nombre de la línea.
+        @return Código.
+        """
         n = (name or "").lower()
         if any(k in n for k in ("vacac", "vacat")):
             return "VAC"
@@ -1227,23 +1582,36 @@ class HrPayslipWorkedDays(models.Model):
 
     @api.onchange("name")
     def _onchange_name(self):
+        """Propone el código al escribir el nombre de la línea."""
         if not self.code and self.name:
             self.code = self._guess_code(self.name)
 
     @api.model_create_multi
     def create(self, vals_list):
+        """Completa el código faltante a partir del nombre.
+
+        @param vals_list Lista de diccionarios de valores.
+        @return Líneas creadas.
+        """
         for vals in vals_list:
             if not vals.get("code"):
                 vals["code"] = self._guess_code(vals.get("name"))
         return super().create(vals_list)
 
     def write(self, vals):
+        """No permite dejar el código vacío: lo deduce del nombre.
+
+        @param vals Valores a escribir.
+        @return True.
+        """
         if "code" in vals and not vals["code"]:
             vals["code"] = self._guess_code(vals.get("name") or self[:1].name)
         return super().write(vals)
 
 
 class HrPayslipLine(models.Model):
+    """Línea de recibo con 4 decimales en el importe unitario."""
+
     _inherit = "hr.payslip.line"
 
     # 4 decimales en el importe unitario: 30 × (sueldo / 30) debe dar el sueldo exacto

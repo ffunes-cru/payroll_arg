@@ -1,3 +1,8 @@
+"""@file
+Lote de liquidación argentino (`hr.payslip.run`): tipo de liquidación ARCA, novedades del lote (valores
+fijos y matriz por empleado), acciones masivas y armado de los datos del Libro de Sueldos Digital, el
+F.931 y los recibos PDF.
+"""
 from datetime import datetime
 
 from odoo import api, fields, models
@@ -5,14 +10,21 @@ from odoo.exceptions import UserError
 
 from .hr_contract import DIAS_BASE_MENSUAL_LCT
 
+## Estados de recibo que todavía se pueden modificar y recalcular.
 EDITABLE_SLIP_STATES = ("draft", "verify")
-# Novedades en horas / días / unidades; el resto son importes en pesos
+## Novedades en horas / días / unidades (primera matriz del lote); el resto son importes en pesos.
 QUANTITY_INPUT_CODES = (
     "HS_NORM", "HS_EXT50", "HS_EXT100", "FERIADO", "VAC_DIAS", "CANT_VIANDAS", "SAC_DIAS", "VAC_NO_GOZ",
 )
 
 
 class HrPayslipRun(models.Model):
+    """Lote de liquidación: una quincena, un mes, unas vacaciones, un SAC o una liquidación final.
+
+    El tipo de liquidación decide la estructura de cada recibo (`hr.payslip._get_struct_for()`), qué
+    novedades se cargan solas, el tope imponible y la base de contribuciones.
+    """
+
     _inherit = "hr.payslip.run"
 
     tipo_liquidacion = fields.Selection(
@@ -82,10 +94,18 @@ class HrPayslipRun(models.Model):
     )
 
     def _get_novelty_amounts(self):
-        """{código: valor} de las novedades fijadas en el lote."""
+        """{código: valor} de las novedades fijadas en el lote.
+
+        @return dict {código: valor}.
+        """
         return {n.code: n.amount for n in self.novelty_ids if n.code}
 
     def _get_editable_slips(self):
+        """Recibos del lote en borrador o en espera.
+
+        @return hr.payslip.
+        @throws UserError Si no hay ninguno.
+        """
         slips = self.slip_ids.filtered(lambda s: s.state in EDITABLE_SLIP_STATES)
         if not slips:
             raise UserError("No hay recibos en borrador o en espera en este lote.")
@@ -97,7 +117,11 @@ class HrPayslipRun(models.Model):
 
     @api.onchange("tipo_liquidacion")
     def _onchange_tipo_liquidacion(self):
-        """Sugiere estructura y N° de liquidación según el tipo. Las fechas las define el usuario."""
+        """Sugiere estructura y N° de liquidación según el tipo. Las fechas las define el usuario.
+
+        1° Quincena / Mensual → liquidación 1; 2° Quincena → 2. Quincenas → estructura de jornales;
+        Mensual → de mensuales; Vacaciones / SAC / Final → sin estructura (la resuelve cada recibo).
+        """
         Version = self.env["hr.version"]
         tipo = self.tipo_liquidacion
         if tipo in ("1° Quincena", "Mensual"):
@@ -119,6 +143,10 @@ class HrPayslipRun(models.Model):
 
     @api.onchange("date_start", "date_end")
     def _onchange_dates(self):
+        """La fecha de pago sigue al fin del período; avisa si las fechas están invertidas.
+
+        @return Advertencia o None.
+        """
         if self.date_end:
             self.payment_date = self.date_end
         if self.date_start and self.date_end and self.date_start > self.date_end:
@@ -130,6 +158,14 @@ class HrPayslipRun(models.Model):
             }
 
     def write(self, vals):
+        """Las fechas nuevas del lote se copian a sus recibos editables.
+
+        @param vals Valores a escribir.
+        @return True.
+
+        @bug T3 (docs/revision.md): no recarga las novedades automáticas (horas, feriados, vacaciones)
+             del período nuevo; hay que usar *Recargar Novedades del Período*.
+        """
         res = super().write(vals)
         slip_vals = {}
         if "date_start" in vals:
@@ -145,18 +181,28 @@ class HrPayslipRun(models.Model):
     # ══════════════════════════════════════════════
 
     def action_reload_period_inputs(self):
-        """Relee calendario, licencias, asistencias y ficha del empleado en todos los recibos."""
+        """Relee calendario, licencias, asistencias y ficha del empleado en todos los recibos.
+
+        @return True.
+        """
         self.ensure_one()
         self._get_editable_slips().action_reload_period_inputs()
         return True
 
     def action_compute_payslips(self):
+        """Recalcula todos los recibos editables del lote (botón *Recalcular Recibos*).
+
+        @return True.
+        """
         self.ensure_one()
         self._get_editable_slips().compute_sheet()
         return True
 
     def action_confirm_payslips(self):
-        """Confirma todos los recibos del lote en estado borrador o en espera."""
+        """Confirma todos los recibos del lote en estado borrador o en espera.
+
+        @return True.
+        """
         self.ensure_one()
         for slip in self._get_editable_slips():
             # action_payslip_done de OCA no es multi-registro (lee prevent_compute_on_confirm)
@@ -164,12 +210,19 @@ class HrPayslipRun(models.Model):
         return True
 
     def close_payslip_run(self):
-        """Al cerrar el lote, confirma los recibos pendientes y pasa el lote a 'close'."""
+        """Al cerrar el lote, confirma los recibos pendientes y pasa el lote a 'close'.
+
+        @return Resultado de `close_payslip_run` de `payroll`.
+        """
         for slip in self.slip_ids.filtered(lambda s: s.state in EDITABLE_SLIP_STATES):
             slip.action_payslip_done()
         return super().close_payslip_run()
 
     def action_open_input_import(self):
+        """Abre la importación de novedades desde CSV.
+
+        @return Acción de ventana del asistente.
+        """
         self.ensure_one()
         return {
             "name": "Importar Novedades (CSV)",
@@ -182,6 +235,10 @@ class HrPayslipRun(models.Model):
         }
 
     def action_open_export_wizard(self):
+        """Abre el asistente de exportaciones (recibos PDF, LSD, F.931, bancos).
+
+        @return Acción de ventana del asistente.
+        """
         self.ensure_one()
         return {
             "name": "Exportar Reportes de Nómina Argentina",
@@ -198,6 +255,13 @@ class HrPayslipRun(models.Model):
     # ══════════════════════════════════════════════
 
     def _prepare_lsd_payload(self):
+        """Datos del Libro de Sueldos Digital de este lote (una liquidación) para `py_arg_reports`.
+
+        Toma los recibos en espera o hechos. Días base: 15 en quincenas, 30 en el resto.
+
+        @return dict con período, CUIT y la liquidación con sus empleados (F.931 + conceptos).
+        @throws UserError Sin recibos calculados o con datos faltantes (`_validate_slips_for_export()`).
+        """
         self.ensure_one()
         slips = self.slip_ids.filtered(lambda s: s.state in ["verify", "done"])
         if not slips:
@@ -241,7 +305,13 @@ class HrPayslipRun(models.Model):
         }
 
     def _validate_slips_for_export(self, slips):
-        """Valida que todos los recibos tengan datos requeridos antes de exportar."""
+        """Valida que todos los recibos tengan datos requeridos antes de exportar.
+
+        Hoy exige CUIL, contrato y recibo calculado. Muestra hasta 20 errores juntos.
+
+        @param slips Recibos a exportar.
+        @throws UserError Si falta algún dato.
+        """
         errors = []
         for slip in slips:
             emp_name = slip.employee_id.name or f"ID:{slip.employee_id.id}"
@@ -258,6 +328,11 @@ class HrPayslipRun(models.Model):
             )
 
     def _prepare_recibos_payload(self):
+        """Datos de los recibos PDF del lote (recibos en espera o hechos).
+
+        @return Lista de dict de `hr.payslip._to_recibo_dict()`.
+        @throws UserError Sin recibos calculados.
+        """
         self.ensure_one()
         slips = self.slip_ids.filtered(lambda s: s.state in ["verify", "done"])
         if not slips:
@@ -272,6 +347,14 @@ class HrPayslipRun(models.Model):
         ]
 
     def _prepare_f931_payload(self):
+        """Datos del TXT del F.931 (SICOSS) con los recibos de este lote: una fila por recibo.
+
+        @return dict con CUIT, período y filas.
+        @throws UserError Sin recibos calculados.
+
+        @bug E1 (docs/revision.md): el F.931 es mensual por CUIL, pero se arma por lote: con dos
+             quincenas salen dos declaraciones, cada una con la mitad del mes. Tampoco valida CUIL.
+        """
         self.ensure_one()
         slips = self.slip_ids.filtered(lambda s: s.state in ["verify", "done"])
         if not slips:
