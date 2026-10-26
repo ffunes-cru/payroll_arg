@@ -61,6 +61,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
 | [T7](#t7) | baja | Código | Campos de compañía sin uso |
 | [T8](#t8) | media | Código | Parámetros legales sin fecha de vigencia |
 | [T9](#t9) | media | Código | SIRADIG: una presentación vieja pisa la ficha |
+| [T10](#t10) | media | Confirmado | "Falta configurar…" de las reglas termina en un error de Python |
 | [A1](#a1) | media | Código | Horas extra pendientes o rechazadas pagadas como normales |
 | [A2](#a2) | media | Norma | Sábado entero al 100% y feriado trabajado |
 | [A3](#a3) | baja | Código | Sin control de topes de horas extra |
@@ -68,6 +69,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
 | [U2](#u2) | baja | Código | El calendario cambia el tipo de salario por su nombre |
 | [U3](#u3) | media | Código | "Recargar novedades" pisa las correcciones manuales sin aviso |
 | [U4](#u4) | baja | Código | Botones sin vista: imprimir recibo y confirmar lote |
+| [S1–S7](#seguridad) | alta | Resuelto | Permisos: menú, datos sensibles, departamentos, configuración y compañías |
 
 **Prioridad sugerida:**
 1. T1 (una línea).
@@ -458,6 +460,18 @@ con vigencia desde / hasta, o guardar en el recibo los valores usados.
 después de uno mayor pisa la ficha con los datos viejos. Aplicar sólo la última presentación del
 período.
 
+### T10
+
+**"Falta configurar…" de las reglas termina en un error de Python.** *Media, confirmado.*
+
+Las reglas avisan los datos que faltan con `raise ValueError("Falta configurar …")`, pero `ValueError`
+no existe en el entorno donde Odoo evalúa las reglas (`safe_eval`). El usuario ve *"Wrong python code
+defined for salary rule …"* con `NameError: name 'ValueError' is not defined`, en lugar del mensaje.
+
+- Se ve, por ejemplo, con un empleado *Convencionado* sin convenio.
+- Propuesta: agregar al contexto de las reglas una función `falta(mensaje)` que levante un `UserError`
+  con el nombre del empleado, y que el cálculo muestre sólo ese mensaje.
+
 ## Asistencias (`payroll_arg_attendance`)
 
 ### A1
@@ -507,6 +521,22 @@ mano y no pisarlas (o avisar cuáles cambian).
 **Botones sin vista.** `hr.payslip.action_print_recibo_pdf()` y `hr.payslip.run.action_confirm_payslips()`
 no tienen botón (ver la tabla de puntos de entrada de la [referencia](referencia.md)). Agregarlos o
 borrarlos.
+
+## Seguridad
+
+Revisión de permisos del 26/10/2026, resuelta en el PR "Seguridad" (detalle en
+[Seguridad](seguridad.md)).
+
+| Id | Problema | Estado |
+|---|---|---|
+| S1 | La app de nómina aparecía a todos los usuarios internos (menú *Nómina Argentina* sin grupo). | Resuelto |
+| S2 | RR. HH. sin nómina leía el CBU, las cargas y deducciones de Ganancias, el aporte adicional y el F.572. | Resuelto (D13) |
+| S3 | El oficial de nómina está limitado a los recibos de su departamento, pero no a las novedades, líneas, acumuladores ni F.572. | Resuelto |
+| S4 | En OCA, cualquier permiso de nómina da *Empleados: Administrador*. | Se mantiene (D14) |
+| S5 | Los lotes son sólo para *Haberes: Administrador* (OCA). | Se mantiene: liquidador = Administrador (D14) |
+| S6 | El oficial de nómina podía cambiar convenios, categorías, tablas y escalas, y actualizar sueldos en masa. | Resuelto |
+| S7 | Sin reglas por compañía en los modelos nuevos; la escala de Ganancias no se elegía por compañía. | Resuelto (D15) |
+| S8 | Estructuras y reglas eran de la compañía principal: una segunda compañía no podía elegirlas ni liquidar. | Resuelto: reglas compartidas, estructuras copiadas por compañía |
 
 ## Lo que está bien
 

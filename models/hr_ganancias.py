@@ -68,10 +68,14 @@ class HrGananciasScale(models.Model):
     )
 
     @api.model
-    def get_scale_for_date(self, target_date):
-        """Busca la escala activa vigente para la fecha indicada.
+    def get_scale_for_date(self, target_date, company=None):
+        """Busca la escala activa vigente para la fecha indicada en la compañía del recibo.
+
+        Con varias compañías habilitadas, el usuario ve las escalas de todas: sin filtrar por compañía
+        podría tomar la de otra.
 
         @param target_date Fecha (el fin del período del recibo).
+        @param company Compañía del recibo (por defecto la compañía actual).
         @return hr.ganancias.scale (vacío si no hay escala: no se retiene).
         """
         return self.search(
@@ -79,6 +83,7 @@ class HrGananciasScale(models.Model):
                 ("date_from", "<=", target_date),
                 ("date_to", ">=", target_date),
                 ("active", "=", True),
+                ("company_id", "=", (company or self.env.company).id),
             ],
             limit=1,
         )

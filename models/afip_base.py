@@ -58,8 +58,10 @@ class AfipLaborCategory(models.Model):
         encima de la categoría (a diferencia de `hr.version.write()`, que los respeta).
 
         @return Notificación con la cantidad de contratos actualizados.
+        @throws AccessError Si el usuario no puede modificar categorías (sólo Nómina / Administrador).
         """
         self.ensure_one()
+        self.check_access("write")
         contracts = self.env["hr.version"].search([("labor_category_id", "=", self.id)])
         new_wage = self.hourly_wage if self.category_type == "hourly" else self.monthly_wage
         if new_wage > 0:

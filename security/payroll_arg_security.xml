@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================== -->
+    <!-- Nómina / Oficial: sólo empleados propios, sin departamento o   -->
+    <!-- de los departamentos que dirige (igual que la regla de OCA     -->
+    <!-- para los recibos). Nómina / Administrador: todo. Ver           -->
+    <!-- docs/seguridad.md.                                             -->
+    <!-- ============================================================== -->
+    <record id="rule_payslip_input_officer" model="ir.rule">
+        <field name="name">Novedades: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_input"/>
+        <field name="domain_force">['|', '|', ('payslip_id.employee_id.user_id', '=', user.id), ('payslip_id.employee_id.department_id', '=', False), ('payslip_id.employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_payslip_input_manager" model="ir.rule">
+        <field name="name">Novedades: administrador de nómina</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_input"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_payslip_line_officer" model="ir.rule">
+        <field name="name">Líneas de recibo: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_line"/>
+        <field name="domain_force">['|', '|', ('employee_id.user_id', '=', user.id), ('employee_id.department_id', '=', False), ('employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_payslip_line_manager" model="ir.rule">
+        <field name="name">Líneas de recibo: administrador de nómina</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_ganancias_accumulator_officer" model="ir.rule">
+        <field name="name">Acumuladores de Ganancias: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_ganancias_accumulator"/>
+        <field name="domain_force">['|', '|', ('employee_id.user_id', '=', user.id), ('employee_id.department_id', '=', False), ('employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_ganancias_accumulator_manager" model="ir.rule">
+        <field name="name">Acumuladores de Ganancias: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_ganancias_accumulator"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_siradig_f572_officer" model="ir.rule">
+        <field name="name">F.572: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_siradig_f572"/>
+        <field name="domain_force">['|', '|', ('employee_id.user_id', '=', user.id), ('employee_id.department_id', '=', False), ('employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_siradig_f572_manager" model="ir.rule">
+        <field name="name">F.572: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_siradig_f572"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+    <record id="rule_hr_siradig_carga_familia_officer" model="ir.rule">
+        <field name="name">F.572 cargas de familia: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_siradig_carga_familia"/>
+        <field name="domain_force">['|', '|', ('f572_id.employee_id.user_id', '=', user.id), ('f572_id.employee_id.department_id', '=', False), ('f572_id.employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_hr_siradig_carga_familia_manager" model="ir.rule">
+        <field name="name">F.572 cargas de familia: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_siradig_carga_familia"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_hr_siradig_deduccion_officer" model="ir.rule">
+        <field name="name">F.572 deducciones: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_siradig_deduccion"/>
+        <field name="domain_force">['|', '|', ('f572_id.employee_id.user_id', '=', user.id), ('f572_id.employee_id.department_id', '=', False), ('f572_id.employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_hr_siradig_deduccion_manager" model="ir.rule">
+        <field name="name">F.572 deducciones: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_siradig_deduccion"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_hr_siradig_pago_cuenta_officer" model="ir.rule">
+        <field name="name">F.572 pagos a cuenta: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_siradig_pago_cuenta"/>
+        <field name="domain_force">['|', '|', ('f572_id.employee_id.user_id', '=', user.id), ('f572_id.employee_id.department_id', '=', False), ('f572_id.employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_hr_siradig_pago_cuenta_manager" model="ir.rule">
+        <field name="name">F.572 pagos a cuenta: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_siradig_pago_cuenta"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <record id="rule_hr_siradig_otro_empleador_officer" model="ir.rule">
+        <field name="name">F.572 otros empleadores: oficial de nómina y subordinados</field>
+        <field name="model_id" ref="model_hr_siradig_otro_empleador"/>
+        <field name="domain_force">['|', '|', ('f572_id.employee_id.user_id', '=', user.id), ('f572_id.employee_id.department_id', '=', False), ('f572_id.employee_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_user'))]"/>
+    </record>
+    <record id="rule_hr_siradig_otro_empleador_manager" model="ir.rule">
+        <field name="name">F.572 otros empleadores: administrador de nómina</field>
+        <field name="model_id" ref="model_hr_siradig_otro_empleador"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('payroll.group_payroll_manager'))]"/>
+    </record>
+
+    <!-- ============================================================== -->
+    <!-- Multi-compañía (reglas globales): cada usuario ve sólo los     -->
+    <!-- datos de las compañías que tiene habilitadas.                  -->
+    <!-- ============================================================== -->
+    <record id="rule_hr_payslip_run_company" model="ir.rule">
+        <field name="name">Lotes: multi-compañía</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_run"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_payslip_input_company" model="ir.rule">
+        <field name="name">Novedades: multi-compañía</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_input"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('payslip_id.company_id', '=', False), ('payslip_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_payslip_line_company" model="ir.rule">
+        <field name="name">Líneas de recibo: multi-compañía</field>
+        <field name="model_id" ref="payroll.model_hr_payslip_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('slip_id.company_id', '=', False), ('slip_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_payslip_run_novelty_company" model="ir.rule">
+        <field name="name">Valores del lote: multi-compañía</field>
+        <field name="model_id" ref="model_hr_payslip_run_novelty"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('run_id.company_id', '=', False), ('run_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_ganancias_scale_company" model="ir.rule">
+        <field name="name">Escalas de Ganancias: multi-compañía</field>
+        <field name="model_id" ref="model_hr_ganancias_scale"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_ganancias_scale_line_company" model="ir.rule">
+        <field name="name">Tramos de Ganancias: multi-compañía</field>
+        <field name="model_id" ref="model_hr_ganancias_scale_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('scale_id.company_id', '=', False), ('scale_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_ganancias_accumulator_company" model="ir.rule">
+        <field name="name">Acumuladores de Ganancias: multi-compañía</field>
+        <field name="model_id" ref="model_hr_ganancias_accumulator"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_siradig_f572_company" model="ir.rule">
+        <field name="name">F.572: multi-compañía</field>
+        <field name="model_id" ref="model_hr_siradig_f572"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_siradig_carga_familia_company" model="ir.rule">
+        <field name="name">F.572 cargas de familia: multi-compañía</field>
+        <field name="model_id" ref="model_hr_siradig_carga_familia"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('f572_id.company_id', '=', False), ('f572_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_siradig_deduccion_company" model="ir.rule">
+        <field name="name">F.572 deducciones: multi-compañía</field>
+        <field name="model_id" ref="model_hr_siradig_deduccion"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('f572_id.company_id', '=', False), ('f572_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_siradig_pago_cuenta_company" model="ir.rule">
+        <field name="name">F.572 pagos a cuenta: multi-compañía</field>
+        <field name="model_id" ref="model_hr_siradig_pago_cuenta"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('f572_id.company_id', '=', False), ('f572_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_hr_siradig_otro_empleador_company" model="ir.rule">
+        <field name="name">F.572 otros empleadores: multi-compañía</field>
+        <field name="model_id" ref="model_hr_siradig_otro_empleador"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('f572_id.company_id', '=', False), ('f572_id.company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

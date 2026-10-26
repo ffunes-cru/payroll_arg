@@ -130,9 +130,9 @@ class HrPayslipRun(models.Model):
             self.afip_nro_liquidacion = 2
 
         if tipo in ("1° Quincena", "2° Quincena", "Quincenal"):
-            self.struct_id = Version._get_default_struct("hourly", tipo_liquidacion=tipo)
+            self.struct_id = Version._get_default_struct("hourly", tipo_liquidacion=tipo, company=self.company_id)
         elif tipo == "Mensual":
-            self.struct_id = Version._get_default_struct("monthly", tipo_liquidacion=tipo)
+            self.struct_id = Version._get_default_struct("monthly", tipo_liquidacion=tipo, company=self.company_id)
         else:
             # Vacaciones / SAC / Liquidación Final: cada recibo resuelve la estructura
             # especializada según el tipo de salario de su contrato.

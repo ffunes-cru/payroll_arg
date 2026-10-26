@@ -1351,7 +1351,7 @@ erDiagram
 | `afip_situation_id` | many2one | Situación de Revista AFIP | → `afip.situation`; related `version_id.afip_situation_id` |
 | `afip_zone_id` | many2one | Zona Geográfica AFIP | → `afip.zone`; related `version_id.afip_zone_id` |
 | `aporte_adicional_ss_monto` | float | Aporte Adicional Seg. Social ($) | Monto fijo en pesos a descontar de la liquidación en la 2da quincena como Aporte Adicional de Seguridad Social. |
-| `cbu` | char | CBU Bancario | Clave Bancaria Uniforme (22 dígitos) |
+| `cbu` | char | CBU Bancario | Clave Bancaria Uniforme (22 dígitos). Sólo nómina. |
 | `cct_id` | many2one | Convenio Colectivo | → `afip.cct`; related `version_id.cct_id` |
 | `cuil` | char | CUIL | 11 dígitos numéricos sin guiones |
 | `diff_task_contrib_percent` | float | Contribución Tarea Diferencial (%) | related `version_id.diff_task_contrib_percent` |
@@ -1511,7 +1511,7 @@ Métodos públicos (invocables por RPC) y quién los llama: botones de vistas, P
 | `afip.health.insurance` | `name_get` | Muestra "[código] nombre". | — |
 | `afip.labor.category` | `action_update_contract_wages` | Actualiza el sueldo básico de todos los contratos activos asociados a esta categoría. | botón en `afip.labor.category.form` |
 | `hr.ganancias.scale` | `calculate_annual_bracket` | Calcula el impuesto acumulado aplicando la escala Art. 94 proporcional al mes M (1 a 12). | `models/hr_payslip.py` |
-| `hr.ganancias.scale` | `get_scale_for_date` | Busca la escala activa vigente para la fecha indicada. | `models/hr_payslip.py` |
+| `hr.ganancias.scale` | `get_scale_for_date` | Busca la escala activa vigente para la fecha indicada en la compañía del recibo. | `models/hr_payslip.py` |
 | `hr.payslip.run.input.import` | `action_import` | Escribe las novedades del CSV en los recibos editables del lote. | botón en `hr.payslip.run.input.import.form` |
 | `hr.payslip.run.novelty` | `action_apply` | Pisa el código en todos los recibos editables del lote. | botón en `hr.payslip.run.form.payroll.arg` |
 | `hr.siradig.f572` | `action_apply_to_employee` | Traslada las deducciones del F.572 a los campos fiscales del empleado. | `models/hr_employee.py`; `wizard/hr_siradig_import_wizard.py`; botón en `hr.siradig.f572.form` |
@@ -1542,18 +1542,29 @@ L = leer, E = escribir, C = crear, B = borrar. Sin fila: el grupo no accede al m
 
 | Modelo | Grupo | Permisos |
 |---|---|---|
-| `afip.activity` | Officer | `LECB` |
-| `afip.cct` | Officer | `LECB` |
-| `afip.condition` | Officer | `LECB` |
-| `afip.contract.type` | Officer | `LECB` |
-| `afip.health.insurance` | Officer | `LECB` |
-| `afip.labor.category` | Officer | `LECB` |
-| `afip.siniestrado` | Officer | `LECB` |
-| `afip.situation` | Officer | `LECB` |
-| `afip.zone` | Officer | `LECB` |
+| `afip.activity` | Manager | `LECB` |
+| `afip.activity` | Officer | `L---` |
+| `afip.cct` | Manager | `LECB` |
+| `afip.cct` | Officer | `L---` |
+| `afip.condition` | Manager | `LECB` |
+| `afip.condition` | Officer | `L---` |
+| `afip.contract.type` | Manager | `LECB` |
+| `afip.contract.type` | Officer | `L---` |
+| `afip.health.insurance` | Manager | `LECB` |
+| `afip.health.insurance` | Officer | `L---` |
+| `afip.labor.category` | Manager | `LECB` |
+| `afip.labor.category` | Officer | `L---` |
+| `afip.siniestrado` | Manager | `LECB` |
+| `afip.siniestrado` | Officer | `L---` |
+| `afip.situation` | Manager | `LECB` |
+| `afip.situation` | Officer | `L---` |
+| `afip.zone` | Manager | `LECB` |
+| `afip.zone` | Officer | `L---` |
 | `hr.ganancias.accumulator` | Officer | `LECB` |
-| `hr.ganancias.scale` | Officer | `LECB` |
-| `hr.ganancias.scale.line` | Officer | `LECB` |
+| `hr.ganancias.scale` | Manager | `LECB` |
+| `hr.ganancias.scale` | Officer | `L---` |
+| `hr.ganancias.scale.line` | Manager | `LECB` |
+| `hr.ganancias.scale.line` | Officer | `L---` |
 | `hr.payslip.run.input.import` | Officer | `LECB` |
 | `hr.payslip.run.novelty` | Officer | `LECB` |
 | `hr.siradig.carga.familia` | Officer | `LECB` |

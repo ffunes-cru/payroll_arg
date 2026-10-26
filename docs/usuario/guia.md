@@ -20,6 +20,9 @@ practicar con datos ficticios y resultados conocidos, seguir después los [Escen
 | Fichadas | *Asistencias* |
 | Alícuotas, tope, detracción, seguros | *Ajustes › Compañías › (compañía) › pestaña Nómina Argentina* |
 
+Para liquidar hace falta el permiso **Haberes: Administrador**. Qué ve cada perfil está en
+[Seguridad](../seguridad.md).
+
 Palabras que se usan en toda la guía:
 
 - **Lote**: una liquidación (p. ej. "1° Quincena Agosto 2026") con un recibo por empleado.

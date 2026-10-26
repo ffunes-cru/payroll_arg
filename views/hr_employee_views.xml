@@ -9,6 +9,7 @@
                 <button
                     name="action_view_siradig_f572"
                     type="object"
+                    groups="payroll.group_payroll_user"
                     class="oe_stat_button"
                     icon="fa-file-text-o"
                     help="Ver declaraciones juradas SIRADIG F.572 presentadas por este empleado en AFIP."
@@ -39,7 +40,8 @@
                             <field name="aporte_adicional_ss_monto"/>
                         </group>
                     </group>
-                    <group string="Impuesto a las Ganancias 4ta Categoría (Deducciones Personales SIRADIG F.572)">
+                    <group string="Impuesto a las Ganancias 4ta Categoría (Deducciones Personales SIRADIG F.572)"
+                           groups="payroll.group_payroll_user">
                         <div class="alert alert-light border col-12 mb-2" role="alert" style="font-size: 0.9em; color: #495057;">
                             💡 <b>Deducciones Personales (Art. 30 LIG):</b> Estos valores se pueden cargar manualmente o actualizarse automáticamente importando el archivo F.572 de AFIP en <b>Nómina Argentina > Importar SIRADIG AFIP</b>.
                         </div>

@@ -43,7 +43,8 @@ class HrEmployee(models.Model):
 
     cuil = fields.Char(string="CUIL", size=11, index=True, help="11 dígitos numéricos sin guiones")
     legajo = fields.Integer(string="N° de Legajo", index=True, help="Número de legajo del trabajador")
-    cbu = fields.Char(string="CBU Bancario", size=22, help="Clave Bancaria Uniforme (22 dígitos)")
+    cbu = fields.Char(string="CBU Bancario", size=22, groups="payroll.group_payroll_user",
+                      help="Clave Bancaria Uniforme (22 dígitos). Sólo nómina.")
     payment_type = fields.Selection(
         [
             ("1", "Efectivo"),
@@ -61,33 +62,41 @@ class HrEmployee(models.Model):
     aporte_adicional_ss_monto = fields.Float(
         string="Aporte Adicional Seg. Social ($)",
         default=0.0,
+        groups="payroll.group_payroll_user",
         help="Monto fijo en pesos a descontar de la liquidación en la 2da quincena como Aporte Adicional de Seguridad Social.",
     )
 
     # Deducciones Personales de Ganancias 4ta Categoría (SIRADIG F.572)
-    ganancias_conyuge = fields.Boolean(string="Declara Cónyuge a Cargo", default=False)
-    ganancias_hijos = fields.Integer(string="Hijos a Cargo", default=0)
-    ganancias_hijos_incapacitados = fields.Integer(string="Hijos Incapacitados a Cargo", default=0)
+    # Datos de Ganancias y del F.572: sólo nómina (D13 en docs/decisiones.md)
+    ganancias_conyuge = fields.Boolean(string="Declara Cónyuge a Cargo", default=False,
+                                       groups="payroll.group_payroll_user")
+    ganancias_hijos = fields.Integer(string="Hijos a Cargo", default=0, groups="payroll.group_payroll_user")
+    ganancias_hijos_incapacitados = fields.Integer(string="Hijos Incapacitados a Cargo", default=0,
+                                                   groups="payroll.group_payroll_user")
     ganancias_otras_deducciones_mensual = fields.Float(
         string="Otras Deducciones Mensuales SIRADIG ($)",
         default=0.0,
+        groups="payroll.group_payroll_user",
         help="Prepagas, alquileres, intereses hipotecarios, etc. declarados mensualmente en F.572 Web.",
     )
     siradig_f572_ids = fields.One2many(
         "hr.siradig.f572",
         "employee_id",
         string="Declaraciones SIRADIG F.572",
+        groups="payroll.group_payroll_user",
         help="Historial de formularios F.572 Web presentados por el empleado en AFIP.",
     )
     siradig_count = fields.Integer(
         string="Cantidad F.572",
         compute="_compute_siradig_count",
+        groups="payroll.group_payroll_user",
     )
     siradig_latest_id = fields.Many2one(
         "hr.siradig.f572",
         string="Último F.572 Registrado",
         compute="_compute_siradig_latest_id",
         store=True,
+        groups="payroll.group_payroll_user",
     )
 
     @api.depends("siradig_f572_ids")
@@ -177,9 +186,10 @@ class HrEmployee(models.Model):
 
         @param wage_type 'hourly' o 'monthly'.
         @param tipo_liquidacion Tipo de lote (opcional).
-        @return hr.payroll.structure o False.
+        @return hr.payroll.structure o False (de la compañía del empleado).
         """
-        return self.env["hr.version"]._get_default_struct(wage_type, tipo_liquidacion=tipo_liquidacion)
+        return self.env["hr.version"]._get_default_struct(
+            wage_type, tipo_liquidacion=tipo_liquidacion, company=self[:1].company_id or self.env.company)
 
     # ──────────────────────────────────────────────
     # ONCHANGES

@@ -72,6 +72,7 @@ class HrContract(models.Model):
         string="Aporte Adicional Seg. Social ($)",
         related="employee_id.aporte_adicional_ss_monto",
         readonly=False,
+        groups="payroll.group_payroll_user",
         help="Monto fijo en pesos a descontar de la liquidación en la 2da quincena como Aporte Adicional de Seguridad Social.",
     )
 
@@ -173,15 +174,19 @@ class HrContract(models.Model):
             return cal
 
     @api.model
-    def _get_default_struct(self, wage_type, tipo_liquidacion=None):
+    def _get_default_struct(self, wage_type, tipo_liquidacion=None, company=None):
         """Resuelve la estructura salarial por defecto para un wage_type y tipo_liquidacion dado.
 
-        Sin la estructura especializada (p. ej. SAC jornal) cae en la base del tipo de salario.
+        Sin la estructura especializada (p. ej. SAC jornal) cae en la base del tipo de salario. Cada
+        compañía tiene su copia de las estructuras (OCA exige compañía en la estructura): se busca la de
+        la compañía indicada, la del registro o la actual.
 
         @param wage_type 'hourly' o 'monthly'.
         @param tipo_liquidacion 'Vacaciones', 'SAC', 'Liquidación Final', 'Mensual', etc. (opcional).
+        @param company Compañía (por defecto la del registro o la actual).
         @return record de hr.payroll.structure o False
         """
+        company = company or self[:1].company_id or self.env.company
         if wage_type == "hourly":
             if tipo_liquidacion == "Vacaciones":
                 code = "VACACIONES_JORNAL_ARG"
@@ -201,10 +206,11 @@ class HrContract(models.Model):
             else:
                 code = "MENSUAL_ARG"
 
-        struct = self.env["hr.payroll.structure"].search([("code", "=", code)], limit=1)
+        Structure = self.env["hr.payroll.structure"]
+        struct = Structure.search([("code", "=", code), ("company_id", "=", company.id)], limit=1)
         if not struct:
             base_code = "JORNAL_QUINC_ARG" if wage_type == "hourly" else "MENSUAL_ARG"
-            struct = self.env["hr.payroll.structure"].search([("code", "=", base_code)], limit=1)
+            struct = Structure.search([("code", "=", base_code), ("company_id", "=", company.id)], limit=1)
             if not struct:
                 _logger.warning("No se encontró estructura salarial con código '%s' ni '%s'.", code, base_code)
         return struct
