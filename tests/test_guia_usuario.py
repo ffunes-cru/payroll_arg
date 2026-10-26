@@ -112,3 +112,23 @@ class TestGuiaUsuario(TransactionCase):
         """*Recargar desde Último F.572* sin declaraciones muestra el aviso, no un error de Python."""
         with self.assertRaises(UserError):
             self.con_contrato.action_reapply_latest_siradig()
+
+    # ── F1: una sola pestaña Nómina ──
+
+    def test_f1_una_sola_pestana_nomina(self):
+        """El formulario del empleado tiene una sola pestaña de nómina, la estándar, con los datos
+        argentinos y sin los campos que no se usan."""
+        from lxml import etree
+        arch = etree.fromstring(self.env["hr.employee"].get_view(self.env.ref("hr.view_employee_form").id)["arch"])
+        self.assertFalse(arch.xpath("//page[@string='Nómina Argentina']"))
+        pagina = arch.xpath("//page[@name='payroll_information']")[0]
+        campos = [campo.get("name") for campo in pagina.iter("field")]
+        for campo in ("contract_date_start", "wage_type", "wage", "struct_id", "resource_calendar_id", "cuil",
+                      "legajo", "cct_id", "labor_category_id", "afip_situation_id", "afip_contract_type_id",
+                      "aporte_adicional_ss_monto", "ganancias_hijos"):
+            self.assertIn(campo, campos, campo)
+        for campo in ("wage", "struct_id", "resource_calendar_id"):
+            self.assertEqual(campos.count(campo), 1, campo)
+        for campo in ("contract_type_id", "structure_type_id"):
+            nodo = pagina.xpath(f".//field[@name='{campo}']")
+            self.assertTrue(not nodo or nodo[0].get("invisible") in ("1", "True"), campo)
