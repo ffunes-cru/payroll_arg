@@ -1,5 +1,5 @@
 """@file
-Los escenarios de la guía de usuario cargan, reproducen los recibos reales y coinciden con
+Los escenarios de la guía de usuario cargan, reproducen los recibos de referencia y coinciden con
 docs/usuario/resultados.md."""
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
@@ -34,8 +34,8 @@ class TestEscenarios(TransactionCase):
             ARCHIVO_RESULTADOS.read_text(encoding="utf-8"), generar_resultados(self.env, self.lotes),
             "docs/usuario/resultados.md está desactualizado: regenerarlo como indica tools/escenarios.py.")
 
-    def test_a_reproduce_recibos_reales(self):
-        """El empleado A reproduce los dos recibos reales (2° Quincena agosto y 1° Quincena septiembre),
+    def test_a_reproduce_recibos_referencia(self):
+        """El empleado A reproduce los dos recibos de referencia (2° Quincena agosto y 1° Quincena septiembre),
         con la base de septiembre tomada sola de agosto."""
         q2 = self._lineas(2, "a")
         self.assertEqual((q2["BASIC_HORAS"], q2["FERIADO"], q2["ADIC_ANTIG"], q2["RET_OS"], q2["COMP_JUB"]),

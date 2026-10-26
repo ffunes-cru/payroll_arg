@@ -19,7 +19,7 @@ y conviene haber leído la [Guía de uso](guia.md).
 
 | Legajo | Empleado | Tipo | Básico | Ingreso | Particularidad |
 |---|---|---|---|---|---|
-| 9101 | Prueba A - Juan Pérez | Jornal UOM, Oficial | 6.675,34 / h | 01/03/2020 (6 años) | Reproduce dos **recibos reales**. |
+| 9101 | Prueba A - Juan Pérez | Jornal UOM, Oficial | 6.675,34 / h | 01/03/2020 (6 años) | Reproduce los dos **recibos de referencia**. |
 | 9102 | Prueba B - Lucas Gómez | Jornal UOM, Medio Oficial | 4.900 / h | 02/05/2024 (2 años) | Horas extras y viandas. |
 | 9103 | Prueba C - Martín Sosa | Jornal UOM, Operario | 4.500 / h | 01/02/2023 (3 años) | Vacaciones 07 al 20/09 (14 días). |
 | 9104 | Prueba D - Carla Díaz | Mensual UOM, Administrativa 2ª | 1.250.000 | 01/04/2015 (11 años) | Vacaciones 21 al 25/09 (5 días) dentro del mes. |
@@ -102,7 +102,7 @@ UOM.
 5. **Recalcular Recibos.**
 
 **Controlar:**
-- **A es un recibo real:** remunerativo **1.080.509,31**, retenciones 224.244,97, neto **956.264,34**,
+- **A es un recibo de referencia:** remunerativo **1.080.509,31**, retenciones 224.244,97, neto **956.264,34**,
   contribuciones 344.539,47.
 - B: antigüedad 2% × (88 + 8,8 + 10 × 1,5 + 4 × 2) × 4.900 = 2% × 587.020 = 11.740,40; extras 73.500 y
   39.200.
@@ -110,7 +110,7 @@ UOM.
 
 **Problema conocido:**
 - **C14.** El feriado automático de B, C y F es 8,8 hs; el 17/08 es lunes y el calendario dice 9. A tiene
-  9 porque se corrigió a mano, como en su recibo real.
+  9 porque se corrigió a mano, como en su recibo de referencia.
 
 ## Ejercicio 3: Mensual de agosto 2026
 
@@ -156,7 +156,7 @@ UOM.
 3. Ya **no** hace falta *Bruto Mes Anterior Manual*. **Recalcular.**
 
 **Controlar:**
-- **A es el otro recibo real:**
+- **A es el otro recibo de referencia:**
   - la base de contribuciones sale sola de agosto: 1.171.346,95 + 1.080.509,31 = **2.251.856,26**;
   - remunerativo **1.125.660,72**, neto **906.156,88**, contribuciones 192.196,21.
 - B: base de contribuciones = su agosto (439.824 + 718.760,40 = 1.158.584,40).

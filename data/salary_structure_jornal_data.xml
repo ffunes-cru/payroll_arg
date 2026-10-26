@@ -110,7 +110,7 @@ result = inp('PREMIO_PROD') > 0
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # Premio por producción: importe fijo cargado como novedad. Remunerativo, fuera de la base
-# de antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
+# de antigüedad (confirmado con los recibos de referencia). Ver E2: sin código LSD.
 result = inp('PREMIO_PROD')
             </field>
         </record>
@@ -131,7 +131,7 @@ result = inp('PRESENTISMO') > 0
             <field name="amount_select">code</field>
             <field name="amount_python_compute">
 # Presentismo: importe fijo cargado como novedad. Remunerativo, fuera de la base de
-# antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
+# antigüedad (confirmado con los recibos de referencia). Ver E2: sin código LSD.
 result = inp('PRESENTISMO')
             </field>
         </record>
@@ -573,7 +573,7 @@ result = categories.REM + categories.NOREM + categories.DED
         <!-- CONTRIBUCIONES PATRONALES (DESGLOSADAS CCT UOM / AFIP)   -->
         <!-- Se calculan en todas las liquidaciones. En las quincenas  -->
         <!-- de jornalizados la base es el remunerativo del último     -->
-        <!-- mes declarado (cuadro de costo del recibo real): Q1 y Q2  -->
+        <!-- mes declarado (cuadro de costo del recibo de referencia): Q1 y Q2  -->
         <!-- repiten el costo del mes (ver C20 en docs/revision.md).   -->
         <!-- Sólo los seguros de vida UOM se saltean la 1° Quincena.   -->
         <!-- ======================================================== -->

@@ -54,7 +54,7 @@ documento de `docs/` que corresponda y commitear todo junto.
 ## Cambiar una fórmula
 
 1. Editar la regla en el XML, con un comentario de qué cambió y por qué.
-2. Correr `tests/test_recibos_reales.py`. Si falla, el cambio rompe un recibo real: confirmarlo con el
+2. Correr `tests/test_recibos_referencia.py`. Si falla, el cambio rompe un recibo de referencia: confirmarlo con el
    liquidador antes de tocar el test.
 3. Si cierra un punto de la [revisión](revision.md), quitar la marca `@bug` del código y el punto del
    documento.

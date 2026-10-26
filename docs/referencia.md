@@ -497,7 +497,7 @@ result = inp('PREMIO_PROD') > 0
 
 ```python
 # Premio por producción: importe fijo cargado como novedad. Remunerativo, fuera de la base
-# de antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
+# de antigüedad (confirmado con los recibos de referencia). Ver E2: sin código LSD.
 result = inp('PREMIO_PROD')
 ```
 
@@ -515,7 +515,7 @@ result = inp('PRESENTISMO') > 0
 
 ```python
 # Presentismo: importe fijo cargado como novedad. Remunerativo, fuera de la base de
-# antigüedad (confirmado con los recibos reales). Ver E2: sin código LSD.
+# antigüedad (confirmado con los recibos de referencia). Ver E2: sin código LSD.
 result = inp('PRESENTISMO')
 ```
 

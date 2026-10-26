@@ -70,7 +70,7 @@ periodicidad, y una restricción impide combinar un jornalizado con una estructu
 | **Contribuciones** | A cargo del empleador: SIPA, INSSJP, AAFF, FNE (18% en total), Obra Social 6%, ART, seguros. | Categoría `COMP`. |
 | **Tope imponible** | Base máxima para los aportes del trabajador (Art. 9 Ley 24.241). En quincenas, la mitad. | `res.company.tope_imponible_max_retencion`; por recibo `tope_imponible_retenciones`. |
 | **Detracción** | Importe mensual que se resta de la base de contribuciones (Ley 27.541; $7.003,68). | `res.company.detraccion_sipa`. |
-| **Coeficientes de contribución** | Multiplican las contribuciones: 1 = alícuota plena; los recibos reales usan 0,10 (SS) y 0,15 (OS). | `coef_contrib_ss` / `coef_contrib_os` de la compañía y del lote. |
+| **Coeficientes de contribución** | Multiplican las contribuciones: 1 = alícuota plena; los recibos de referencia usan 0,10 (SS) y 0,15 (OS). | `coef_contrib_ss` / `coef_contrib_os` de la compañía y del lote. |
 | **Antigüedad** | Adicional del 1% por año (CCT UOM) sobre las horas pagadas a valor hora. | Regla `ADIC_ANTIG`, `payslip.antiguedad_anios`. |
 | **SAC** (aguinaldo) | 50% de la mayor remuneración mensual del semestre (Ley 23.041), en junio y diciembre. | Lote SAC, reglas `SAC_*`, novedades `SAC_BASE` y `SAC_DIAS`. |
 | **Ganancias 4ta categoría** | Impuesto que el empleador retiene por el método acumulativo (RG 4003). | Regla `RET_GANANCIAS`, escalas `hr.ganancias.scale`, acumuladores. |
@@ -84,7 +84,7 @@ periodicidad, y una restricción impide combinar un jornalizado con una estructu
 ## Un ejemplo completo
 
 2° Quincena de agosto de 2026 (16 al 31), operario UOM, valor hora $6.675,34, 6 años de antigüedad. Es
-el recibo real que reproduce `tests/test_recibos_reales.py`.
+uno de los recibos de referencia que reproduce `tests/test_recibos_referencia.py`.
 
 **Novedades:** `HS_NORM` 88, `FERIADO` 9 (lunes 17/08), `PRESENTISMO` 394.150,85, `GRATIF_NO_REM` 30.000,
 `COMPENS_NO_REM` 70.000. Base de contribuciones (remunerativo del último mes declarado) 3.945.490,21.
