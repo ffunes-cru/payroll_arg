@@ -117,6 +117,9 @@ El usuario revisa en GitHub. Cuando pide "atender los comentarios del PR N":
   campo o marca, no por "vacaci" o "UOM" en el nombre.
 - **Clasificar conceptos por atributos de la regla** (tipo de concepto, base de Obra Social / sindicato,
   gravado en Ganancias), no por listas de códigos sueltas en Python.
+- **Guía de usuario = test:** cada paso de `docs/usuario/guia.md` tiene su caso en
+  `tests/test_guia_usuario.py`, hecho con `Form` (reproduce la interfaz: onchanges, campos visibles y de
+  sólo lectura). Cambiar un paso de la guía o una vista que la guía usa = actualizar ese test.
 - **Seguridad:** todo modelo nuevo con datos de nómina lleva permiso, regla de oficial / administrador,
   regla multi-compañía y su caso en `tests/test_seguridad.py`; los campos sensibles en modelos de RR. HH.
   llevan `groups="payroll.group_payroll_user"` (`docs/seguridad.md`).

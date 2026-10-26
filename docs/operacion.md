@@ -102,7 +102,7 @@ de `payroll_arg` y `payroll_arg_attendance`). Una página nueva de `docs/` tiene
 
 | Síntoma | Causa | Qué hacer |
 |---|---|---|
-| "no tiene contrato vigente en el período" | Contrato sin fecha de inicio o que empieza después del período. | Corregir el contrato y recalcular. |
+| "Estos empleados no tienen contrato vigente entre…" (al generar) o "no tiene contrato vigente en el período" (al calcular) | Al empleado le falta la **fecha de inicio del contrato**, empieza después del período o su fecha de fin es anterior. | 1. *Empleados*, abrir el empleado. 2. Pestaña **Nómina**, arriba a la izquierda **Contrato**: cargar la fecha de inicio (la de ingreso); borrar la fecha de fin si no corresponde. 3. Guardar. 4. Volver al lote y **Generar nóminas** otra vez (o *Recalcular Recibos*). |
 | "tiene salario básico $0" | Contrato sin básico. | Cargar el sueldo o el valor hora (o la categoría). |
 | "Falta configurar la alícuota…" / "Coeficiente de contribución inválido" | Parámetro de la compañía o del lote en 0. | Completar en la compañía o en el lote. |
 | La matriz no muestra un empleado o una columna | El recibo no tiene esa entrada. | *Recargar Novedades del Período* (agrega las que falten). |

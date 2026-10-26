@@ -42,21 +42,21 @@
             <xpath expr="//notebook" position="before">
                 <group string="Resumen de Liquidación Argentina">
                     <group string="Bases Imponibles y Topes Previsionales (Ley 24.241)">
-                        <field name="tope_imponible_retenciones" readonly="state != 'draft'"
+                        <field name="tope_imponible_retenciones" readonly="state not in ('draft', 'verify')"
                                placeholder="Tope de la compañía"/>
                         <field name="base_imponible_seg_social" readonly="1" style="font-weight: bold;"/>
                         <field name="is_tope_applied" readonly="1" invisible="not is_tope_applied"/>
-                        <field name="prev_month_gross_manual" readonly="state != 'draft'" invisible="wage_type != 'hourly'"/>
+                        <field name="prev_month_gross_manual" readonly="state not in ('draft', 'verify')" invisible="wage_type != 'hourly'"/>
                     </group>
                     <group string="Antigüedad">
                         <field name="antiguedad_anios" readonly="1" style="font-weight: bold;"/>
-                        <field name="antiguedad_override" widget="boolean_toggle" readonly="state != 'draft'"/>
-                        <field name="antiguedad_anios_manual" readonly="state != 'draft'" invisible="not antiguedad_override"/>
+                        <field name="antiguedad_override" widget="boolean_toggle" readonly="state not in ('draft', 'verify')"/>
+                        <field name="antiguedad_anios_manual" readonly="state not in ('draft', 'verify')" invisible="not antiguedad_override"/>
                     </group>
                     <group string="Ganancias 4ta Categoría">
                         <field name="ganancias_status" readonly="1" style="font-weight: bold;" invisible="not has_ganancias_retention and ganancias_override == 0"/>
                         <field name="ganancias_amount" readonly="1" invisible="not has_ganancias_retention and ganancias_override == 0"/>
-                        <field name="ganancias_override" readonly="state != 'draft'"/>
+                        <field name="ganancias_override" readonly="state not in ('draft', 'verify')"/>
                     </group>
                     <group string="Totales Monetarios">
                         <field name="total_remunerativo" readonly="1"/>

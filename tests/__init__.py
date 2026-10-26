@@ -3,3 +3,4 @@ from . import test_recibos_referencia
 from . import test_documentacion
 from . import test_escenarios
 from . import test_seguridad
+from . import test_guia_usuario

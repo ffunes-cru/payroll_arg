@@ -81,21 +81,46 @@ Más términos en el [glosario](../conceptos.md#glosario).
 
 ### 3.1 Alta de un empleado
 
-En *Empleados › Nuevo*:
+En *Empleados › Nuevo*, escribir el **nombre** y abrir la pestaña **Nómina**. Todo lo de la liquidación
+está en esa pestaña, en este orden:
 
-1. **Nombre** y, en la pestaña de nómina argentina: **CUIL** (se valida), **N° de legajo**, **forma de
-   pago** y **CBU** (22 dígitos), **obra social** y adherentes.
-2. **Contrato** (pestaña de contrato / versión):
-   - **Fecha de inicio:** es la de ingreso; de ella sale la antigüedad.
-   - **Categoría laboral:** propone el tipo de salario, el convenio y el básico.
-   - **Tipo de salario:** *Jornalizado* (el sueldo es el **valor hora**) o *Mensualizado* (sueldo
-     mensual). Al cambiarlo se ajustan solos la estructura, el calendario y la periodicidad.
-   - **Convencionado:** marcado si está en convenio (cuota sindical y antigüedad). Desmarcado = fuera
+1. **Contrato** (arriba a la izquierda): **fecha de inicio**, que es la fecha de ingreso; de ella sale la
+   antigüedad.
+
+   > **Sin fecha de inicio el empleado no tiene contrato y no se puede liquidar.** Al generar un lote
+   > aparece "Estos empleados no tienen contrato vigente…". La fecha de fin queda vacía salvo en un
+   > egreso.
+
+2. **Convenio** (columna derecha):
+   - **Convencionado:** marcado si está en convenio (cuota sindical y antigüedad); desmarcado = fuera
      de convenio.
-   - **Datos AFIP:** modalidad de contratación, situación de revista, condición, actividad, zona y
-     código de siniestrado (van al F.931 y al Libro de Sueldos).
-3. **Ganancias:** cónyuge, hijos e hijos incapacitados (se completan solos con el F.572) y *Aporte
-   Adicional Seg. Social* si corresponde.
+   - **Convenio:** p. ej. UOM.
+   - **Categoría:** completa sola el tipo de salario, el sueldo / valor hora, la estructura salarial y
+     el horario.
+3. **Revisar lo que completó la categoría** (columna izquierda):
+   - **Tipo de Salario:** *Jornalizado* (el importe es el **valor hora**) o *Mensualizado* (sueldo
+     mensual). Al cambiarlo se ajustan solos la estructura, el horario y la periodicidad.
+   - **Sueldo / Valor hora:** el de la categoría; cambiarlo si se pactó otro.
+   - **Estructura salarial** y **Horas laborables:** las del tipo de salario. No hace falta tocarlas.
+4. **Identificación** (columna derecha): **CUIL** (se valida), **N° de legajo**, **obra social**,
+   adherentes y lugar de trabajo.
+5. **Pago** (abajo): forma de pago y **CBU** (22 dígitos).
+6. **Datos AFIP** (abajo):
+   - modalidad de contratación;
+   - situación de revista;
+   - condición;
+   - actividad;
+   - zona;
+   - código de siniestrado.
+
+   Van al F.931 y al Libro de Sueldos.
+7. **Contribuciones especiales** (abajo): sólo si corresponde (seguro de vida obligatorio, reducción,
+   aporte adicional, tarea diferencial).
+8. **Ganancias** (abajo, sólo nómina): cónyuge, hijos e hijos incapacitados. Se completan solos con el
+   F.572.
+
+Guardar. Los campos *Tipo de contrato* y *Tipo de estructura salarial* de Odoo no se usan y no
+aparecen.
 
 **Para dar de baja:** cargar la fecha de fin del contrato y hacer la liquidación final (ver 8.3).
 
@@ -122,10 +147,14 @@ En *Empleados › Nuevo*:
    - **Nombre**, p. ej. "1° Quincena Agosto 2026".
    - **Tipo de Liquidación AFIP:** *1° Quincena* (del 1 al 15) o *2° Quincena* (del 16 al último día).
      Propone el número de liquidación (1 o 2) y la estructura de jornales.
-   - **Fechas** del período y **Fecha de Pago**.
+   - **Período:** en el selector de fechas, hacer clic en el primer día y después en el último (p. ej. 1 y
+     15).
+   - **Fecha de Pago.**
    - **Coeficientes de contribución:** vienen de la compañía.
-2. Guardar y **Generar nóminas** (*Generate Payslips*): elegir los empleados y **Generar**. Cada recibo
-   nace con sus novedades automáticas:
+2. Guardar y **Generar nóminas** (*Generate Payslips*): elegir los empleados y **Generar**. Si alguno no
+   tiene contrato en el período, el sistema lo nombra y no genera nada: cargarle la fecha de inicio del
+   contrato (3.1) o sacarlo de la selección. Cada recibo nace calculado (*En espera*) con sus novedades
+   automáticas:
    - **horas normales** (88 por quincena, o las fichadas);
    - **feriados** del período;
    - **días de vacaciones** aprobadas;
@@ -137,8 +166,9 @@ En *Empleados › Nuevo*:
    *Importes ($)*. Una fila por empleado y una columna por novedad (ver la [tabla de
    novedades](#7-novedades)). También se puede usar **Importar Novedades (CSV)**.
 5. **Base de contribuciones del primer mes.** La quincena toma la base del mes anterior de los recibos
-   de Odoo. Si es el primer mes en Odoo, cargar en cada recibo *Bruto Mes Anterior Manual* con el bruto
-   remunerativo del mes anterior del sistema viejo.
+   de Odoo. Si es el primer mes en Odoo, abrir cada recibo (pestaña *Recibos*, flecha) y cargar en
+   *Bruto Mes Anterior Manual* el bruto remunerativo del mes anterior del sistema viejo. Se puede editar
+   mientras el recibo está en borrador o *En espera*.
 6. **Recalcular Recibos.** Si falta contrato, estructura o básico, el sistema avisa con el nombre del
    empleado.
 7. Revisar los recibos (sección 6).

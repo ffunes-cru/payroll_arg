@@ -52,7 +52,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
 | [E2](#e2) | media | Código | Libro de Sueldos Digital: códigos de concepto 0 o repetidos |
 | [E3](#e3) | alta | Código | Archivos bancarios con CBU / CUIL de relleno |
 | [E4](#e4) | media | Código | Recibo y exportaciones con datos inventados |
-| [T1](#t1) | alta | Código | `UserError` sin importar en el empleado |
+| [T1](#t1) | alta | Resuelto | `UserError` sin importar en el empleado |
 | [T2](#t2) | media | Código | Ganancias se graba al calcular un borrador |
 | [T3](#t3) | media | Código | Cambiar las fechas del lote no recarga las novedades |
 | [T4](#t4) | baja | Código | Antigüedad guardada sin depender de la fecha de ingreso |
@@ -70,6 +70,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
 | [U3](#u3) | media | Código | "Recargar novedades" pisa las correcciones manuales sin aviso |
 | [U4](#u4) | baja | Código | Botones sin vista: imprimir recibo y confirmar lote |
 | [S1–S7](#seguridad) | alta | Resuelto | Permisos: menú, datos sensibles, departamentos, configuración y compañías |
+| [G1–G6, F1](#guía-de-usuario) | alta | Resuelto | Errores al seguir la guía de usuario y pestaña de nómina duplicada |
 
 **Prioridad sugerida:**
 1. T1 (una línea).
@@ -537,6 +538,22 @@ Revisión de permisos del 26/10/2026, resuelta en el PR "Seguridad" (detalle en
 | S6 | El oficial de nómina podía cambiar convenios, categorías, tablas y escalas, y actualizar sueldos en masa. | Resuelto |
 | S7 | Sin reglas por compañía en los modelos nuevos; la escala de Ganancias no se elegía por compañía. | Resuelto (D15) |
 | S8 | Estructuras y reglas eran de la compañía principal: una segunda compañía no podía elegirlas ni liquidar. | Resuelto: reglas compartidas, estructuras copiadas por compañía |
+
+## Guía de usuario
+
+Validación del 26/10/2026: `tests/test_guia_usuario.py` sigue la [guía](usuario/guia.md) con `Form`, que
+reproduce lo que hace la interfaz (onchanges, campos visibles y de sólo lectura). Encontró y corrigió:
+
+| Id | Problema | Estado |
+|---|---|---|
+| G1 | Un recibo nuevo desde *Liquidaciones del empleado* fallaba siempre (`'hr.employee' object has no attribute 'first_contract_date'`), con o sin contrato. | Resuelto |
+| G3 | La plantilla de alta masiva traía CUIL inválidos: importarla fallaba. | Resuelto |
+| G4 | Un empleado sin contrato en el lote frenaba la generación a mitad de camino, sin decir dónde corregirlo. | Resuelto |
+| G5 | *Bruto Mes Anterior Manual*, el tope y los overrides no se podían editar en recibos *En espera* (como quedan al generar). | Resuelto |
+| G6 | El archivo del Galicia fallaba con cualquier empleado (apellido vacío). | Resuelto |
+| F1 | El empleado tenía dos pestañas de nómina con sueldo, estructura y horario repetidos; los datos AFIP no estaban en el empleado. | Resuelto: una sola pestaña *Nómina* |
+
+T1 también se corrigió en esta validación.
 
 ## Lo que está bien
 

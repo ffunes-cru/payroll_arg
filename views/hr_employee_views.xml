@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!--
+        Empleado: todo lo de nómina en la pestaña estándar "Nómina" (payroll_information), sin una
+        segunda pestaña. Se ocultan los campos de Odoo que la nómina argentina no usa: "Tipo de contrato"
+        (lo reemplaza la modalidad de contratación AFIP) y "Tipo de estructura salarial" (nómina de
+        Odoo Enterprise; acá manda la Estructura salarial).
+    -->
     <record id="view_employee_form_payroll_arg" model="ir.ui.view">
         <field name="name">hr.employee.form.payroll.arg</field>
         <field name="model">hr.employee</field>
@@ -17,53 +23,86 @@
                     <field name="siradig_count" widget="statinfo" string="SIRADIG F.572"/>
                 </button>
             </xpath>
-            <xpath expr="//notebook" position="inside">
-                <page string="Nómina Argentina">
+
+            <!-- Columna Contrato (estándar): tipo de salario junto al sueldo / valor hora -->
+            <xpath expr="//page[@name='payroll_information']//label[@for='wage']" position="before">
+                <field name="wage_type"/>
+            </xpath>
+            <xpath expr="//page[@name='payroll_information']//label[@for='wage']" position="attributes">
+                <attribute name="string">Sueldo / Valor hora</attribute>
+            </xpath>
+            <xpath expr="//page[@name='payroll_information']//field[@name='contract_type_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//page[@name='payroll_information']//field[@name='structure_type_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Segunda columna: convenio e identificación -->
+            <xpath expr="//page[@name='payroll_information']//group[@name='contract']" position="after">
+                <group name="payroll_arg_convenio">
+                    <separator string="Convenio"/>
+                    <field name="is_convencionado"/>
+                    <field name="cct_id" invisible="not is_convencionado"/>
+                    <field name="labor_category_id" domain="[('category_type', '=', wage_type)]"
+                           options="{'no_create': True}"/>
+                    <separator string="Identificación"/>
+                    <field name="cuil"/>
+                    <field name="legajo"/>
+                    <field name="health_insurance_id"/>
+                    <field name="health_insurance_adherents"/>
+                    <field name="workplace_location"/>
+                </group>
+            </xpath>
+
+            <!-- Debajo: pago, datos AFIP, contribuciones y Ganancias -->
+            <xpath expr="//page[@name='payroll_information']/group[@name='payroll_group']" position="after">
+                <group name="payroll_arg_afip">
+                    <group string="Pago">
+                        <field name="payment_type"/>
+                        <field name="cbu"/>
+                    </group>
+                    <group string="Datos AFIP (F.931 y Libro de Sueldos)">
+                        <field name="afip_contract_type_id"/>
+                        <field name="afip_situation_id"/>
+                        <field name="afip_condition_id"/>
+                        <field name="afip_activity_id"/>
+                        <field name="afip_zone_id"/>
+                        <field name="afip_siniestrado_id"/>
+                    </group>
+                    <group string="Contribuciones especiales">
+                        <field name="has_mandatory_life_insurance"/>
+                        <field name="has_reduction"/>
+                        <field name="additional_ss_contrib_percent"/>
+                        <field name="aporte_adicional_ss_monto"/>
+                        <field name="diff_task_contrib_percent"/>
+                        <field name="additional_health_insurance_amount"/>
+                    </group>
+                </group>
+                <group string="Impuesto a las Ganancias 4ta Categoría (Deducciones Personales SIRADIG F.572)"
+                       name="payroll_arg_ganancias" groups="payroll.group_payroll_user">
+                    <div class="text-muted col-12 mb-2">
+                        Se completan solos al importar el F.572 en <b>Nómina Argentina › Importar SIRADIG AFIP</b>;
+                        también se pueden cargar a mano.
+                    </div>
                     <group>
-                        <group string="Identificación y Pago">
-                            <field name="cuil"/>
-                            <field name="legajo"/>
-                            <field name="payment_type"/>
-                            <field name="cbu"/>
-                            <field name="workplace_location"/>
-                        </group>
-                        <group string="Convenio y Remuneración">
-                            <field name="wage_type"/>
-                            <field name="is_convencionado"/>
-                            <field name="cct_id"/>
-                            <field name="labor_category_id" domain="[('cct_id', '=', cct_id), ('category_type', '=', wage_type)]"/>
-                            <field name="wage" string="Sueldo / Valor Hora"/>
-                            <field name="struct_id"/>
-                            <field name="resource_calendar_id"/>
-                            <field name="health_insurance_id"/>
-                            <field name="health_insurance_adherents"/>
-                            <field name="aporte_adicional_ss_monto"/>
-                        </group>
+                        <field name="ganancias_conyuge"/>
+                        <field name="ganancias_hijos"/>
+                        <field name="ganancias_hijos_incapacitados"/>
                     </group>
-                    <group string="Impuesto a las Ganancias 4ta Categoría (Deducciones Personales SIRADIG F.572)"
-                           groups="payroll.group_payroll_user">
-                        <div class="alert alert-light border col-12 mb-2" role="alert" style="font-size: 0.9em; color: #495057;">
-                            💡 <b>Deducciones Personales (Art. 30 LIG):</b> Estos valores se pueden cargar manualmente o actualizarse automáticamente importando el archivo F.572 de AFIP en <b>Nómina Argentina > Importar SIRADIG AFIP</b>.
-                        </div>
-                        <group>
-                            <field name="ganancias_conyuge"/>
-                            <field name="ganancias_hijos"/>
-                            <field name="ganancias_hijos_incapacitados"/>
-                        </group>
-                        <group>
-                            <field name="ganancias_otras_deducciones_mensual"/>
-                            <field name="siradig_latest_id" readonly="1" invisible="not siradig_latest_id"/>
-                            <button
-                                name="action_reapply_latest_siradig"
-                                type="object"
-                                string="🔄 Recargar desde Último F.572"
-                                class="btn-sm btn-outline-primary mt-2"
-                                invisible="siradig_count == 0"
-                                help="Vuelve a volcar en los campos superiores las deducciones del último F.572 importado."
-                            />
-                        </group>
+                    <group>
+                        <field name="ganancias_otras_deducciones_mensual"/>
+                        <field name="siradig_latest_id" readonly="1" invisible="not siradig_latest_id"/>
+                        <button
+                            name="action_reapply_latest_siradig"
+                            type="object"
+                            string="Recargar desde Último F.572"
+                            class="btn-sm btn-outline-primary mt-2"
+                            invisible="siradig_count == 0"
+                            help="Vuelve a volcar en los campos de arriba las deducciones del último F.572 importado."
+                        />
                     </group>
-                </page>
+                </group>
             </xpath>
         </field>
     </record>

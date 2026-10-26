@@ -53,6 +53,35 @@ class PayrollArgExportWizard(models.TransientModel):
     file_data = fields.Binary(string="Archivo Generado", readonly=True)
     file_name = fields.Char(string="Nombre del Archivo", readonly=True)
 
+    @staticmethod
+    def _nombre_y_apellido(empleado):
+        """Nombre y apellido para los archivos bancarios, que los piden por separado.
+
+        Odoo guarda el nombre completo en un solo campo: la primera palabra es el nombre y el resto el
+        apellido (con una sola palabra, se repite). Ver P16 en docs/pendientes.md.
+
+        @param empleado hr.employee.
+        @return Tupla (nombre, apellido).
+        """
+        partes = (empleado.name or "").strip().split(" ", 1)
+        nombre = partes[0] if partes and partes[0] else "Empleado"
+        return nombre, partes[1] if len(partes) > 1 else nombre
+
+    @staticmethod
+    def _archivo_bancario(clase, datos, banco):
+        """Instancia el generador de `py_arg_reports`, que valida los datos al crearse.
+
+        @param clase Clase del generador (AcreditacionGalicia, AcreditacionSantander).
+        @param datos Datos del archivo.
+        @param banco Nombre del banco para el mensaje.
+        @return Generador.
+        @throws UserError Con el error de validación de la librería, en lugar de un error del servidor.
+        """
+        try:
+            return clase(datos)
+        except ValueError as error:
+            raise UserError(f"Datos incompletos para el archivo de {banco}: {error}") from error
+
     def action_generate_report(self):
         """Genera el archivo elegido y reabre el asistente para descargarlo.
 
@@ -151,10 +180,11 @@ class PayrollArgExportWizard(models.TransientModel):
                 empleados_galicia = []
                 for slip in run.slip_ids.filtered(lambda s: s.state in ["verify", "done"]):
                     if slip.neto_liquidacion > 0:
+                        nombre, apellido = self._nombre_y_apellido(slip.employee_id)
                         empleados_galicia.append(
                             {
-                                "nombre": slip.employee_id.name,
-                                "apellido": "",
+                                "nombre": nombre,
+                                "apellido": apellido,
                                 "nro_cuenta": slip.employee_id.cbu or "0000000000000000000000",
                                 "importe_pago": slip.neto_liquidacion,
                             }
@@ -162,7 +192,7 @@ class PayrollArgExportWizard(models.TransientModel):
                 galicia_data = {"empleados": empleados_galicia}
                 out_name = f"Acreditacion_Galicia_{periodo_tag}.xlsx"
                 target_file = os.path.join(temp_dir, out_name)
-                banco = AcreditacionGalicia(galicia_data)
+                banco = self._archivo_bancario(AcreditacionGalicia, galicia_data, "Galicia")
                 ok, err = banco.generate_file(target_file)
                 if not ok or err:
                     raise UserError(f"Error generando acreditaciones Galicia: {err}")
@@ -174,9 +204,7 @@ class PayrollArgExportWizard(models.TransientModel):
                 empleados_santander = []
                 for slip in run.slip_ids.filtered(lambda s: s.state in ["verify", "done"]):
                     if slip.neto_liquidacion > 0:
-                        parts = (slip.employee_id.name or "").strip().split(" ", 1)
-                        first_name = parts[0] if parts else "Empleado"
-                        last_name = parts[1] if len(parts) > 1 else first_name
+                        first_name, last_name = self._nombre_y_apellido(slip.employee_id)
                         empleados_santander.append(
                             {
                                 "nombre": first_name,
@@ -212,7 +240,7 @@ class PayrollArgExportWizard(models.TransientModel):
                 }
                 out_name = f"Acreditacion_Santander_{periodo_tag}.txt"
                 target_file = os.path.join(temp_dir, out_name)
-                banco = AcreditacionSantander(santander_data)
+                banco = self._archivo_bancario(AcreditacionSantander, santander_data, "Santander")
                 ok, err = banco.generate_file(target_file)
                 if not ok or err:
                     raise UserError(f"Error generando acreditaciones Santander: {err}")
