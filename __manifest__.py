@@ -13,6 +13,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/payroll_arg_security.xml",
         "data/afip_data.xml",
         "data/salary_structure_jornal_data.xml",
         "data/ganancias_scale_2026.xml",

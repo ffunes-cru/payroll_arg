@@ -144,3 +144,29 @@ class TestSeguridad(TransactionCase):
         self.assertNotIn("siradig", arch)
         self.assertNotIn("ganancias_", arch)
         self.assertEqual(self.env(user=self.oficial)["hr.employee"].browse(self.emp_d1.id).cbu, "0110000330000000000000")
+
+    # ── S3: el oficial de nómina ve lo de su departamento ──
+
+    def test_s3_oficial_ve_solo_su_departamento(self):
+        """El oficial ve recibos, novedades, líneas, acumuladores de Ganancias y F.572 de su departamento,
+        no los del otro; el administrador de nómina ve los dos."""
+        datos = {
+            "hr.payslip": self.lote_a.slip_ids,
+            "hr.payslip.input": self.lote_a.slip_ids.input_line_ids,
+            "hr.payslip.line": self.lote_a.slip_ids.line_ids,
+            "hr.ganancias.accumulator": self.env["hr.ganancias.accumulator"].search(
+                [("employee_id", "in", (self.emp_d1 | self.emp_d2).ids)]),
+            "hr.siradig.f572": self.env["hr.siradig.f572"].search(
+                [("employee_id", "in", (self.emp_d1 | self.emp_d2).ids)]),
+            "hr.siradig.deduccion": self.env["hr.siradig.f572"].search(
+                [("employee_id", "in", (self.emp_d1 | self.emp_d2).ids)]).deduccion_ids,
+        }
+        for modelo, registros in datos.items():
+            def empleado(registro):
+                """Empleado de un registro (las deducciones lo tienen en su F.572)."""
+                return registro.f572_id.employee_id if "f572_id" in registro._fields else registro.employee_id
+            self.assertTrue(registros.filtered(lambda r: empleado(r) == self.emp_d2), modelo)
+            vistos = self._visible(self.oficial, modelo, registros)
+            self.assertTrue(vistos, modelo)
+            self.assertEqual({empleado(r).id for r in vistos}, {self.emp_d1.id}, modelo)
+            self.assertEqual(self._visible(self.liquidador, modelo, registros), registros, modelo)
