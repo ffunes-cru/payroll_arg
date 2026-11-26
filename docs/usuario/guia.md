@@ -131,7 +131,8 @@ aparecen.
 1. Exportar la **plantilla**.
 2. Completarla: legajo, nombre, CUIL, tipo de salario, código de convenio y categoría, sueldo, fecha de
    ingreso, código de obra social, forma de pago, CBU, lugar de trabajo.
-3. Importarla. Si el CUIL o el legajo ya existen, actualiza al empleado.
+3. Importarla. Si el CUIL o el legajo ya existen en la compañía activa, actualiza a ese empleado; si
+   no, lo da de alta en la compañía activa (un empleado de otra compañía no se toca).
 4. El resumen muestra las filas con error.
 
 ## 4. Licencias

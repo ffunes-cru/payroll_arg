@@ -564,6 +564,7 @@ ahora depende `payroll_arg`.
 
 | Id | Problema | Estado |
 |---|---|---|
+| T12 | El importador de empleados buscaba sin compañía (y el CUIL por subcadena): con acceso a dos compañías, la fila de una actualizaba al empleado de la otra si compartían legajo o CUIL. | Resuelto: busca en la compañía activa y el CUIL exacto |
 | T13 | Legajo y CUIL sin unicidad: dos empleados activos de la misma compañía podían compartirlos y el F.931 y el LSD salían con personas duplicadas. | Resuelto: `hr_crucianelli` los define, únicos entre los activos de cada compañía (otra compañía del grupo puede repetirlos) |
 
 ## Lo que está bien

@@ -1,6 +1,8 @@
 """@file
 La guía de usuario funciona tal como está escrita: cada paso se hace con `Form`, que reproduce lo que hace
 la interfaz (onchanges, campos visibles y de sólo lectura) en lugar de escribir directo en los modelos."""
+import base64
+
 from odoo.exceptions import UserError
 from odoo.tests import Form, TransactionCase, tagged
 
@@ -105,6 +107,23 @@ class TestGuiaUsuario(TransactionCase):
         importar.action_import_file()
         self.assertIn("Empleados Creados: 2", importar.result_summary)
         self.assertNotIn("Errores", importar.result_summary)
+
+    def test_t12_importar_no_toca_empleado_de_otra_compania(self):
+        """Con acceso a dos compañías, una fila con el legajo y el CUIL de un empleado de la otra da de
+        alta uno nuevo en la compañía activa y no modifica al de la otra (RR. HH. repite legajos entre
+        compañías y la misma persona puede estar en dos)."""
+        otra = self.env["res.company"].create({"name": "Otra compañía del grupo"})
+        ajeno = self.env["hr.employee"].create({
+            "name": "Empleado de la otra", "company_id": otra.id, "legajo": 7100, "cuil": "20301234563"})
+        env = self.env(context=dict(self.env.context, allowed_company_ids=[self.env.company.id, otra.id]))
+        importar = env["payroll.arg.employee.wizard"].create({
+            "operation_mode": "import", "filename": "alta.csv",
+            "data_file": base64.b64encode(b"legajo,nombre,cuil\n7100,Alta en la activa,20301234563\n")})
+        importar.action_import_file()
+        self.assertIn("Empleados Creados: 1", importar.result_summary)
+        self.assertEqual(ajeno.name, "Empleado de la otra")
+        nuevo = env["hr.employee"].search([("legajo", "=", 7100), ("company_id", "=", self.env.company.id)])
+        self.assertEqual(nuevo.name, "Alta en la activa")
 
     # ── T1: recargar el F.572 sin declaraciones ──
 
