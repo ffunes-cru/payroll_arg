@@ -71,6 +71,7 @@ estos casos aparece en ellos (no tienen vacaciones, SAC, horas extras, indemniza
 | [U4](#u4) | baja | Código | Botones sin vista: imprimir recibo y confirmar lote |
 | [S1–S7](#seguridad) | alta | Resuelto | Permisos: menú, datos sensibles, departamentos, configuración y compañías |
 | [G1–G6, F1](#guía-de-usuario) | alta | Resuelto | Errores al seguir la guía de usuario y pestaña de nómina duplicada |
+| [T12–T13](#integración-con-rr-hh) | media | Resuelto | Legajo y CUIL sin unicidad por compañía; importador de empleados entre compañías |
 
 **Prioridad sugerida:**
 1. T1 (una línea).
@@ -554,6 +555,16 @@ reproduce lo que hace la interfaz (onchanges, campos visibles y de sólo lectura
 | F1 | El empleado tenía dos pestañas de nómina con sueldo, estructura y horario repetidos; los datos AFIP no estaban en el empleado. | Resuelto: una sola pestaña *Nómina* |
 
 T1 también se corrigió en esta validación.
+
+## Integración con RR. HH.
+
+Hallazgos de la revisión de integración con Gestión de Personas (RR. HH. se migra al mismo Odoo y carga
+legajos y contratos que lee la liquidación). Legajo y CUIL pasaron al módulo `hr_crucianelli`, del que
+ahora depende `payroll_arg`.
+
+| Id | Problema | Estado |
+|---|---|---|
+| T13 | Legajo y CUIL sin unicidad: dos empleados activos de la misma compañía podían compartirlos y el F.931 y el LSD salían con personas duplicadas. | Resuelto: `hr_crucianelli` los define, únicos entre los activos de cada compañía (otra compañía del grupo puede repetirlos) |
 
 ## Lo que está bien
 
