@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """@file
-Ficha del empleado para la nómina argentina: CUIL, legajo, forma de pago y CBU, obra social, aporte
-adicional de Seguridad Social y deducciones de Ganancias (cargas de familia y F.572 SIRADIG).
+Ficha del empleado para la nómina argentina: forma de pago y CBU, obra social, aporte adicional de
+Seguridad Social y deducciones de Ganancias (cargas de familia y F.572 SIRADIG). El legajo y el CUIL los
+define `hr_crucianelli` (los carga RR. HH.), con su validación y unicidad por compañía.
 
 En Odoo 19 los datos del contrato (tipo de salario, estructura, convenio) se editan también desde el
 empleado (versión actual); por eso las restricciones y onchanges del contrato tienen su espejo acá.
@@ -14,35 +15,11 @@ from odoo.exceptions import UserError, ValidationError
 _logger = logging.getLogger(__name__)
 
 
-def validate_cuit_cuil(cuit_str):
-    """Valida el dígito verificador de un CUIT / CUIL (módulo 11, pesos 5-4-3-2-7-6-5-4-3-2).
-
-    @param cuit_str CUIT o CUIL, con o sin guiones. Vacío se considera válido (campo opcional).
-    @return True si es válido.
-    """
-    if not cuit_str:
-        return True
-    cuit = cuit_str.replace("-", "").strip()
-    if len(cuit) != 11 or not cuit.isdigit():
-        return False
-    multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-    total = sum(int(cuit[i]) * multipliers[i] for i in range(10))
-    mod = total % 11
-    verif = 11 - mod
-    if verif == 11:
-        verif = 0
-    elif verif == 10:
-        verif = 9
-    return int(cuit[10]) == verif
-
-
 class HrEmployee(models.Model):
     """Empleado con los datos personales, bancarios y fiscales que pide la liquidación argentina."""
 
     _inherit = "hr.employee"
 
-    cuil = fields.Char(string="CUIL", size=11, index=True, help="11 dígitos numéricos sin guiones")
-    legajo = fields.Integer(string="N° de Legajo", index=True, help="Número de legajo del trabajador")
     cbu = fields.Char(string="CBU Bancario", size=22, groups="payroll.group_payroll_user",
                       help="Clave Bancaria Uniforme (22 dígitos). Sólo nómina.")
     payment_type = fields.Selection(
@@ -295,16 +272,6 @@ class HrEmployee(models.Model):
     # ──────────────────────────────────────────────
     # VALIDACIONES DE DATOS
     # ──────────────────────────────────────────────
-
-    @api.constrains("cuil")
-    def _check_cuil(self):
-        """El CUIL debe tener dígito verificador válido (lo exigen el F.931 y el LSD).
-
-        @throws ValidationError CUIL inválido.
-        """
-        for employee in self:
-            if employee.cuil and not validate_cuit_cuil(employee.cuil):
-                raise ValidationError(f"El CUIL '{employee.cuil}' del empleado '{employee.name}' no es válido.")
 
     @api.constrains("cbu")
     def _check_cbu(self):

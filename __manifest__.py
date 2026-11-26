@@ -7,6 +7,7 @@
     "license": "AGPL-3",
     "depends": [
         "payroll",
+        "hr_crucianelli",
         "hr_holidays",
         "resource",
         "web_widget_x2many_2d_matrix",

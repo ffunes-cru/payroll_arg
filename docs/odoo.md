@@ -32,11 +32,16 @@ sigue diciendo `contract` (`slip.contract_id` es un `hr.version`).
   recalculan cuando cambian las líneas.
 - **Onchange** (`@api.onchange`): sólo en el formulario (tipo de salario → estructura y calendario).
 - **Restricciones** (`@api.constrains`): impiden guardar datos incoherentes (tipo de salario vs.
-  estructura, CUIL inválido).
+  estructura, CBU). El CUIL inválido y el legajo o CUIL repetidos en la compañía los rechaza
+  `hr_crucianelli`, que define esos dos campos.
 - **Datos XML** (`data/`): reglas, estructuras y tablas se cargan desde XML. Con `noupdate="0"` se
   reescriben al actualizar; con `noupdate="1"`, no.
   [Datos](https://www.odoo.com/documentation/19.0/developer/reference/backend/data.html).
 - **Migraciones** (`migrations/<versión>/post-migrate.py`): corren al actualizar a esa versión.
+- **Mover un campo en una vista heredada** (`<xpath expr="//field[@name='cuil']" position="move"/>`
+  dentro de otro `xpath`): lo saca de donde lo puso otro módulo y lo pone acá, sin repetirlo. Así el
+  legajo y el CUIL de `hr_crucianelli` aparecen en la pestaña de nómina.
+  [Herencia de vistas](https://www.odoo.com/documentation/19.0/developer/reference/user_interface/view_records.html#inheritance-specs).
 
 ## Recursos y ausencias
 

@@ -222,9 +222,10 @@ class PayrollArgEmployeeWizard(models.TransientModel):
     def action_import_file(self):
         """Crea o actualiza empleados desde el archivo.
 
-        Busca al empleado por CUIL y luego por legajo. Si la categoría tiene tipo, manda sobre la columna
-        de tipo de salario; sin sueldo usa el básico de la categoría. Asigna calendario, estructura y
-        periodicidad por defecto del tipo de salario. Los errores de una fila no frenan las demás.
+        Busca al empleado de la compañía activa por CUIL exacto y luego por legajo; si no está, lo da
+        de alta en esa compañía. Si la categoría tiene tipo, manda sobre la columna de tipo de salario;
+        sin sueldo usa el básico de la categoría. Asigna calendario, estructura y periodicidad por
+        defecto del tipo de salario. Los errores de una fila no frenan las demás.
 
         @return Acción que reabre el asistente con el resumen.
         @throws UserError Sin archivo, Excel ilegible o sin filas.
@@ -274,6 +275,7 @@ class PayrollArgEmployeeWizard(models.TransientModel):
         cat_model = self.env["afip.labor.category"]
         os_model = self.env["afip.health.insurance"]
         emp_model = self.env["hr.employee"]
+        company_domain = [("company_id", "=", self.env.company.id)]
 
         for idx, row in enumerate(rows_to_process, start=2):
             try:
@@ -339,12 +341,13 @@ class PayrollArgEmployeeWizard(models.TransientModel):
                 # Obra Social
                 os_rec = os_model.search([("code", "=", os_code)], limit=1) if os_code else False
 
-                # Buscar si el empleado ya existe
+                # Buscar si el empleado ya existe, sólo en la compañía activa: el legajo se repite entre
+                # compañías y la misma persona (mismo CUIL) puede estar en dos.
                 employee = False
                 if cuil_clean:
-                    employee = emp_model.search([("cuil", "like", cuil_clean)], limit=1)
+                    employee = emp_model.search(company_domain + [("cuil", "=", cuil_clean)], limit=1)
                 if not employee and legajo:
-                    employee = emp_model.search([("legajo", "=", legajo)], limit=1)
+                    employee = emp_model.search(company_domain + [("legajo", "=", legajo)], limit=1)
 
                 # Fecha ingreso / inicio contrato
                 start_date = self._parse_date_value(date_start_raw)

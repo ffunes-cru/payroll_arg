@@ -43,7 +43,7 @@ flowchart LR
 | `models/hr_payslip_run_novelty.py` | Valores de novedad fijados para todo el lote. |
 | `models/hr_payslip_input.py` | Entradas del recibo con empleado y lote guardados (para la matriz). |
 | `models/hr_contract.py` | Contrato (`hr.version`): tipo de salario, convenio, categoría, códigos AFIP, coherencia tipo de salario ↔ estructura ↔ calendario; estructura y calendario por defecto. |
-| `models/hr_employee.py` | Empleado: CUIL, legajo, CBU, obra social, cargas de Ganancias, F.572. |
+| `models/hr_employee.py` | Empleado: CBU, obra social, cargas de Ganancias, F.572. Legajo y CUIL vienen de `hr_crucianelli`. |
 | `models/hr_salary_rule.py` | Regla: tipo de concepto AFIP, código LSD, unidad. |
 | `models/hr_ganancias.py` | Escala de Ganancias y acumuladores mensuales. |
 | `models/hr_siradig.py` | F.572 importado y su aplicación a la ficha. |

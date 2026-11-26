@@ -47,12 +47,16 @@
                     <field name="labor_category_id" domain="[('category_type', '=', wage_type)]"
                            options="{'no_create': True}"/>
                     <separator string="Identificación"/>
-                    <field name="cuil"/>
-                    <field name="legajo"/>
                     <field name="health_insurance_id"/>
                     <field name="health_insurance_adherents"/>
                     <field name="workplace_location"/>
                 </group>
+            </xpath>
+
+            <!-- Legajo y CUIL son de hr_crucianelli (pestañas estándar); el liquidador los ve acá -->
+            <xpath expr="//group[@name='payroll_arg_convenio']/field[@name='health_insurance_id']" position="before">
+                <xpath expr="//field[@name='cuil']" position="move"/>
+                <xpath expr="//field[@name='legajo']" position="move"/>
             </xpath>
 
             <!-- Debajo: pago, datos AFIP, contribuciones y Ganancias -->

@@ -1353,7 +1353,6 @@ erDiagram
 | `aporte_adicional_ss_monto` | float | Aporte Adicional Seg. Social ($) | Monto fijo en pesos a descontar de la liquidación en la 2da quincena como Aporte Adicional de Seguridad Social. |
 | `cbu` | char | CBU Bancario | Clave Bancaria Uniforme (22 dígitos). Sólo nómina. |
 | `cct_id` | many2one | Convenio Colectivo | → `afip.cct`; related `version_id.cct_id` |
-| `cuil` | char | CUIL | 11 dígitos numéricos sin guiones |
 | `diff_task_contrib_percent` | float | Contribución Tarea Diferencial (%) | related `version_id.diff_task_contrib_percent` |
 | `ganancias_conyuge` | boolean | Declara Cónyuge a Cargo |  |
 | `ganancias_hijos` | integer | Hijos a Cargo |  |
@@ -1365,7 +1364,6 @@ erDiagram
 | `health_insurance_id` | many2one | Obra Social (RNOS) | → `afip.health.insurance` |
 | `is_convencionado` | boolean | Convencionado | related `version_id.is_convencionado`; Indica si el empleado está bajo Convenio Colectivo de Trabajo (CCT). Si se desmarca (Fuera de Convenio), no liquida aportes sindicales ni adicionales por antigüedad de CCT. |
 | `labor_category_id` | many2one | Categoría Profesional | → `afip.labor.category`; related `version_id.labor_category_id` |
-| `legajo` | integer | N° de Legajo | Número de legajo del trabajador |
 | `payment_type` | selection | Forma de Pago | valores: `1`, `2`, `3`; Código de forma de pago ante AFIP |
 | `siradig_count` | integer | Cantidad F.572 | calculado |
 | `siradig_f572_ids` | one2many | Declaraciones SIRADIG F.572 | → `hr.siradig.f572`; Historial de formularios F.572 Web presentados por el empleado en AFIP. |
